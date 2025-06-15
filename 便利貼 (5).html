@@ -1,0 +1,2469 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能便利貼系統 - 分期試算完整版</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 頂部工具列 */
+.toolbar {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.toolbar h1 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.search-box {
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #95a5a6;
+}
+
+.search-box input {
+    padding: 8px 15px 8px 35px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    width: 200px;
+    font-size: 14px;
+}
+
+/* 快速工具區 */
+.quick-tools {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.tool-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.tool-card h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tool-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 8px;
+}
+
+.tool-result {
+    background: #e8f5e9;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    min-height: 30px;
+}
+
+/* 統計區 */
+.stats-bar {
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-item .number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.stat-item .label {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+/* 便利貼區域 */
+.notes-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    min-height: 400px;
+}
+
+/* 便利貼樣式 */
+.sticky-note {
+    background: #fff9c4;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+    position: relative;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    cursor: text;
+}
+
+/* 當便利貼包含分期試算時，自動拉寬 */
+.sticky-note.has-calculation {
+    grid-column: span 2;
+    min-width: 800px;
+    width: 100%;
+}
+
+.sticky-note:hover {
+    transform: translateY(-5px);
+    box-shadow: 4px 4px 15px rgba(0,0,0,0.15);
+}
+
+/* 便利貼顏色 */
+.sticky-note.yellow { background: #fff9c4; }
+.sticky-note.pink { background: #fce4ec; }
+.sticky-note.blue { background: #e3f2fd; }
+.sticky-note.green { background: #e8f5e9; }
+.sticky-note.orange { background: #fff3e0; }
+
+/* 新增便利貼按鈕 */
+.add-note-card {
+    background: #f5f5f5;
+    border: 2px dashed #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.add-note-card:hover {
+    background: #e8e8e8;
+    border-color: #3498db;
+}
+
+.add-note-card i {
+    font-size: 3rem;
+    color: #bdc3c7;
+}
+
+/* 便利貼頭部 */
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.note-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c3e50;
+    border: none;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    resize: none;
+}
+
+.note-actions {
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.sticky-note:hover .note-actions {
+    opacity: 1;
+}
+
+.note-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #7f8c8d;
+    font-size: 1rem;
+    padding: 2px 5px;
+}
+
+.note-actions button:hover {
+    color: #2c3e50;
+}
+
+/* 便利貼內容 */
+.note-content-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: visible;
+}
+
+.note-content {
+    border: none;
+    background: transparent;
+    width: 100%;
+    height: 100%;
+    outline: none;
+    resize: none;
+    font-size: 0.95rem;
+    color: #555;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+/* 智能提示 */
+.smart-hints {
+    position: relative;
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding: 8px;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    pointer-events: auto;
+    z-index: 10;
+}
+
+.hint-item {
+    margin: 2px 0;
+    padding: 3px 6px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.hint-zodiac {
+    background: rgba(155, 89, 182, 0.1);
+    color: #8e44ad;
+}
+
+.hint-payment {
+    background: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+}
+
+.hint-calc {
+    background: rgba(241, 196, 15, 0.1);
+    color: #f39c12;
+}
+
+.hint-installment {
+    background: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+    display: block;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* 分期試算表格樣式 - 修正版 */
+.installment-table {
+    margin-top: 10px;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    background: white;
+    table-layout: auto;
+}
+
+.installment-table th {
+    background: #4a5568;
+    color: white;
+    padding: 6px 4px;
+    text-align: center;
+    border: 1px solid #ddd;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.installment-table td {
+    padding: 4px 3px;
+    text-align: right;
+    border: 1px solid #ddd;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.installment-table tr:nth-child(even) {
+    background: #f7fafc;
+}
+
+.installment-table .total-row {
+    font-weight: bold;
+    background: #e2e8f0;
+}
+
+/* 試算比較表格 */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 0.75rem;
+    border: 1px solid #667eea;
+    background: white;
+}
+
+.comparison-table th {
+    background: #667eea;
+    color: white;
+    padding: 6px 8px;
+    text-align: center;
+    border: 1px solid #5a67d8;
+    font-size: 0.7rem;
+}
+
+.comparison-table td {
+    padding: 5px 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    font-size: 0.7rem;
+}
+
+/* 便利貼底部 */
+.note-footer {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.note-info {
+    display: flex;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.note-type {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.note-type.todo {
+    background: #e74c3c;
+    color: white;
+}
+
+.note-type.callback {
+    background: #f39c12;
+    color: white;
+}
+
+.note-type.calculation {
+    background: #3498db;
+    color: white;
+}
+
+/* 快速設定面板 */
+.quick-settings {
+    position: absolute;
+    top: 35px;
+    right: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+    padding: 15px;
+    z-index: 100;
+    display: none;
+    width: 250px;
+}
+
+.quick-settings.show {
+    display: block;
+}
+
+.setting-group {
+    margin-bottom: 10px;
+}
+
+.setting-group label {
+    font-size: 0.85rem;
+    color: #555;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.setting-group input,
+.setting-group select {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* 顏色選擇器 */
+.color-picker {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.color-option:hover,
+.color-option.active {
+    border-color: #3498db;
+}
+
+/* 智能提示開關 */
+.smart-toggle {
+    position: fixed;
+    bottom: 80px;
+    left: 20px;
+    background: #3498db;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.smart-toggle.active {
+    background: #27ae60;
+}
+
+/* 通知 */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+}
+
+.notification {
+    background: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification.success {
+    border-left: 4px solid #27ae60;
+}
+
+.notification.warning {
+    border-left: 4px solid #f39c12;
+}
+
+.notification.info {
+    border-left: 4px solid #3498db;
+}
+
+/* 分期試算說明 */
+.calculation-help {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #3498db;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+/* 說明對話框 */
+.help-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 3000;
+    display: none;
+}
+
+.help-dialog.show {
+    display: block;
+}
+
+.help-dialog h2 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+.help-dialog .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #7f8c8d;
+}
+
+.help-dialog .close-btn:hover {
+    color: #2c3e50;
+}
+
+.help-content {
+    line-height: 1.6;
+}
+
+.help-content h3 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    color: #3498db;
+}
+
+.help-content code {
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.help-content .example {
+    background: #f8f9fa;
+    padding: 10px;
+    border-left: 3px solid #3498db;
+    margin: 10px 0;
+}
+
+/* 遮罩 */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2999;
+    display: none;
+}
+
+.overlay.show {
+    display: block;
+}
+
+/* 試算結果摘要 */
+.calculation-summary {
+    background: #e3f2fd;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 0.85rem;
+}
+
+.calculation-summary .summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 3px 0;
+}
+
+.calculation-summary .summary-label {
+    color: #555;
+}
+
+.calculation-summary .summary-value {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+/* 提前清償樣式 */
+.prepayment-box {
+    background: #fef5e7;
+    border: 2px solid #f39c12;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.prepayment-favorable {
+    background: #d5f4e6;
+    border-color: #27ae60;
+}
+
+.prepayment-unfavorable {
+    background: #fadbd8;
+    border-color: #e74c3c;
+}
+
+/* 多筆試算分隔線 */
+.installment-separator {
+    border-top: 3px solid #667eea;
+    margin: 20px 0;
+    padding-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .notes-board {
+        grid-template-columns: 1fr;
+    }
+    
+    .sticky-note.has-calculation {
+        grid-column: span 1;
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .quick-tools {
+        grid-template-columns: 1fr;
+    }
+    
+    .help-dialog {
+        width: 90%;
+        padding: 20px;
+    }
+    
+    .installment-table {
+        font-size: 0.65rem;
+    }
+    
+    .installment-table th,
+    .installment-table td {
+        padding: 3px 2px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- 頂部工具列 -->
+    <div class="toolbar">
+        <h1><i class="fas fa-sticky-note"></i> 智能便利貼系統</h1>
+        <div class="toolbar-actions">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="搜尋便利貼...">
+            </div>
+            <button class="btn btn-secondary" id="exportBtn">
+                <i class="fas fa-download"></i> 匯出
+            </button>
+            <button class="btn btn-secondary" id="importBtn">
+                <i class="fas fa-upload"></i> 匯入
+            </button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+        </div>
+    </div>
+
+    <!-- 快速工具區 -->
+    <div class="quick-tools">
+        <div class="tool-card">
+            <h3><i class="fas fa-dragon"></i> 生肖查詢</h3>
+            <input type="number" id="rocYear" class="tool-input" placeholder="輸入民國年 (如: 113)">
+            <div id="zodiacResult" class="tool-result">—</div>
+        </div>
+        <div class="tool-card">
+            <h3><i class="fas fa-calendar-alt"></i> 繳款截止日</h3>
+            <select id="billingDay" class="tool-input">
+                <option value="">選擇結帳日</option>
+                <option value="2">2日</option>
+                <option value="4">4日</option>
+                <option value="6">6日</option>
+                <option value="8">8日</option>
+                <option value="10">10日</option>
+                <option value="12">12日</option>
+                <option value="14">14日</option>
+                <option value="16">16日</option>
+                <option value="18">18日</option>
+                <option value="20">20日</option>
+                <option value="22">22日</option>
+                <option value="24">24日</option>
+                <option value="26">26日</option>
+            </select>
+            <div id="paymentResult" class="tool-result">—</div>
+        </div>
+        <div class="tool-card">
+            <h3><i class="fas fa-calculator"></i> 快速計算</h3>
+            <input type="text" id="quickCalc" class="tool-input" placeholder="輸入算式 (如: 100+50*2 或 100 50)">
+            <div id="calcResult" class="tool-result">—</div>
+        </div>
+    </div>
+
+    <!-- 統計區 -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <div class="number" id="todayCount">0</div>
+            <div class="label">今日新增</div>
+        </div>
+        <div class="stat-item">
+            <div class="number" id="totalCount">0</div>
+            <div class="label">總便利貼</div>
+        </div>
+        <div class="stat-item">
+            <div class="number" id="todoCount">0</div>
+            <div class="label">待辦事項</div>
+        </div>
+        <div class="stat-item">
+            <div class="number" id="callbackCount">0</div>
+            <div class="label">待回電</div>
+        </div>
+        <div class="stat-item">
+            <div class="number" id="calculationCount">0</div>
+            <div class="label">試算記錄</div>
+        </div>
+    </div>
+
+    <!-- 便利貼板 -->
+    <div class="notes-board" id="notesBoard">
+        <!-- 新增按鈕永遠在第一個 -->
+        <div class="sticky-note add-note-card" id="addNoteBtn">
+            <i class="fas fa-plus"></i>
+        </div>
+    </div>
+</div>
+
+<!-- 智能提示開關 -->
+<div class="smart-toggle active" id="smartToggle">
+    <i class="fas fa-magic"></i>
+    <span>智能提示：開啟</span>
+</div>
+
+<!-- 分期試算說明按鈕 -->
+<div class="calculation-help" id="calculationHelpBtn">
+    <i class="fas fa-question-circle"></i>
+    <span>試算說明</span>
+</div>
+
+<!-- 說明對話框 -->
+<div class="overlay" id="helpOverlay"></div>
+<div class="help-dialog" id="helpDialog">
+    <button class="close-btn" id="helpCloseBtn">&times;</button>
+    <h2>分期試算使用說明</h2>
+    <div class="help-content">
+        <h3>1. 單筆分期（單分）</h3>
+        <div class="example">
+            格式：<code>單分 金額 期數/利率 入帳日期 首期結帳日</code><br>
+            範例：<code>單分 40000 12/2 1140204 1140220</code>
+        </div>
+
+        <h3>2. 帳單分期（帳分）</h3>
+        <div class="example">
+            格式：<code>帳分 金額 期數/利率 首期帳單月份</code><br>
+            範例：<code>帳分 50000 12/5 11403</code>
+        </div>
+
+        <h3>3. 無息分期（無息）</h3>
+        <div class="example">
+            格式：<code>無息 金額 期數 首期帳單月份</code><br>
+            範例：<code>無息 30000 6 11403</code>
+        </div>
+
+        <h3>4. 多期試算（多期）</h3>
+        <div class="example">
+            帳單分期：<code>多期 金額 利率 首期帳單月份</code><br>
+            單筆分期：<code>多期 金額 利率 入帳日期 首期結帳日</code><br>
+            範例：<code>多期 100000 2.5 11403</code>
+        </div>
+
+        <h3>5. 提前清償（清償）</h3>
+        <div class="example">
+            帳單分期：<code>清償 帳分 金額 期數 利率 首期帳單月份 清償月份</code><br>
+            單筆分期：<code>清償 單分 金額 期數 利率 入帳日期 首期結帳日 清償月份</code><br>
+            無息分期：<code>清償 無分 金額 期數 首期帳單月份 清償月份</code>
+        </div>
+
+        <h3>6. 多筆分期（多筆）</h3>
+        <div class="example">
+            <code>多筆 筆數</code><br>
+            <code>1 帳分 金額 期數 利率 首期帳單月份</code><br>
+            <code>2 單分 金額 期數 利率 入帳日期 首期結帳日</code><br>
+            <code>3 無分 金額 期數 首期帳單月份</code>
+        </div>
+
+        <h3>7. 多筆清償</h3>
+        <div class="example">
+            <code>清償月份 多筆清償</code><br>
+            <code>1 帳分 金額 期數 利率 首期帳單月份</code><br>
+            <code>2 單分 金額 期數 利率 入帳日期 首期結帳日</code><br>
+            <code>3 無分 金額 期數 首期帳單月份</code>
+        </div>
+
+        <h3>特殊功能</h3>
+        <ul>
+            <li>輸入 <code>上次</code> 可重新計算上次的試算條件</li>
+            <li>日期格式支援：YYMMDD、YYYMMDD、YYMM、YYYMM</li>
+            <li>違約金規則：
+                <ul>
+                    <li>首期後至第2期前：$160</li>
+                    <li>第2期後至第6期前：$150</li>
+                    <li>第6期後至第12期前：$140</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>計算功能</h3>
+        <ul>
+            <li>支援四則運算：先乘除後加減</li>
+            <li>支援括號：括號內優先計算</li>
+            <li>支援空格代替加號：<code>20 40 60 30-100</code> = <code>20+40+60+30-100</code></li>
+        </ul>
+    </div>
+</div>
+
+<!-- 通知容器 -->
+<div class="notification-container" id="notificationContainer"></div>
+
+<script>
+// 將所有函數定義在全域作用域
+// 資料儲存
+let notes = JSON.parse(localStorage.getItem('smartStickyNotes')) || [];
+let smartHintsEnabled = true;
+let updateTimer = null;
+let lastCalculation = null; // 儲存上次試算條件
+
+// ========== 分期試算核心功能（從你的檔案修正） ==========
+
+// 違約金規則 - 修正為與你的檔案一致
+const PENALTY_RULES = {
+    1: 160,   // 首期結帳日後至第二期結帳日前
+    2: 150,   // 第二期結帳日後至第六期結帳日前  
+    6: 140    // 第六期結帳日後至第十二期結帳日前
+};
+
+// 日期轉換函數 - 修正版，從你的檔案採用
+function convertToROCDate(dateStr) {
+    try {
+        if (!dateStr) return '';
+        
+        // 移除所有非數字字符
+        const cleanDate = dateStr.toString().replace(/\D/g, '');
+        
+        // 處理不同長度的日期格式
+        if (cleanDate.length === 5) {
+            // YYMM格式，補01
+            return '1' + cleanDate + '01';
+        } else if (cleanDate.length === 6) {
+            // YYMMDD 或 YYYMM 格式
+            if (parseInt(cleanDate.substring(0, 3)) > 100) {
+                // YYYMM 格式，補上 01
+                return cleanDate + '01';
+            } else {
+                // YYMMDD 格式
+                return '1' + cleanDate;
+            }
+        } else if (cleanDate.length === 7) {
+            // YYYMMDD 格式
+            return cleanDate;
+        }
+        
+        return cleanDate;
+    } catch (error) {
+        console.error('日期轉換錯誤:', error);
+        return '';
+    }
+}
+
+// 計算分期明細（從你的檔案修正）
+function calculateInstallmentDetails(principal, rate, terms, firstBillMonth, type = 'bill') {
+    try {
+        const monthlyRate = rate / 100 / 12;
+        let monthlyPayment;
+        
+        if (rate === 0) {
+            // 無息分期
+            monthlyPayment = Math.round(principal / terms);
+        } else {
+            // 年金法計算
+            if (monthlyRate === 0) {
+                monthlyPayment = Math.round(principal / terms);
+            } else {
+                monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, terms)) / 
+                                  (Math.pow(1 + monthlyRate, terms) - 1);
+                monthlyPayment = Math.round(monthlyPayment);
+            }
+        }
+        
+        let balance = principal;
+        const details = [];
+        let totalInterest = 0;
+        
+        // 解析首期帳單月份
+        let startMonth = firstBillMonth;
+        if (firstBillMonth && firstBillMonth.length > 5) {
+            startMonth = firstBillMonth.substring(0, 5);
+        }
+        
+        for (let i = 1; i <= terms; i++) {
+            const interest = rate === 0 ? 0 : Math.round(balance * monthlyRate);
+            let principalPayment = monthlyPayment - interest;
+            
+            // 最後一期調整
+            if (i === terms && balance !== principalPayment) {
+                principalPayment = balance;
+                monthlyPayment = principalPayment + interest;
+            }
+            
+            balance = Math.max(0, balance - principalPayment);
+            totalInterest += interest;
+            
+            // 計算當期帳單月份
+            const billMonth = calculateBillMonth(startMonth, i - 1);
+            
+            details.push({
+                term: i,
+                billMonth: billMonth,
+                payment: monthlyPayment,
+                principal: principalPayment,
+                interest: interest,
+                balance: balance
+            });
+        }
+        
+        return {
+            monthlyPayment: monthlyPayment,
+            totalInterest: totalInterest,
+            totalPayment: principal + totalInterest,
+            details: details
+        };
+    } catch (error) {
+        console.error('分期計算錯誤:', error);
+        return null;
+    }
+}
+
+// 計算帳單月份（從你的檔案採用）
+function calculateBillMonth(startMonth, monthsToAdd) {
+    try {
+        if (!startMonth) return '';
+        
+        const year = parseInt(startMonth.substring(0, 3));
+        const month = parseInt(startMonth.substring(3, 5));
+        
+        let newMonth = month + monthsToAdd;
+        let newYear = year;
+        
+        while (newMonth > 12) {
+            newMonth -= 12;
+            newYear++;
+        }
+        
+        return String(newYear).padStart(3, '0') + String(newMonth).padStart(2, '0');
+    } catch (error) {
+        console.error('帳單月份計算錯誤:', error);
+        return '';
+    }
+}
+
+// 生成分期試算表格（修正版）
+function generateInstallmentTable(result, showDetails = false) {
+    if (!result) return '<div>計算錯誤</div>';
+    
+    let html = '<div class="calculation-summary">';
+    html += '<div class="summary-item"><span class="summary-label">月付金額：</span><span class="summary-value">$' + 
+            result.monthlyPayment.toLocaleString() + '</span></div>';
+    html += '<div class="summary-item"><span class="summary-label">總利息：</span><span class="summary-value">$' + 
+            result.totalInterest.toLocaleString() + '</span></div>';
+    html += '<div class="summary-item"><span class="summary-label">總付款：</span><span class="summary-value">$' + 
+            result.totalPayment.toLocaleString() + '</span></div>';
+    html += '</div>';
+    
+    if (showDetails && result.details) {
+        html += '<table class="installment-table">';
+        html += '<thead><tr>';
+        html += '<th>期數</th><th>帳單月份</th><th>月付額</th>';
+        html += '<th>本金</th><th>利息</th><th>餘額</th>';
+        html += '</tr></thead><tbody>';
+        
+        result.details.forEach(detail => {
+            html += '<tr>';
+            html += `<td>${detail.term}</td>`;
+            html += `<td>${detail.billMonth}</td>`;
+            html += `<td>$${detail.payment.toLocaleString()}</td>`;
+            html += `<td>$${detail.principal.toLocaleString()}</td>`;
+            html += `<td>$${detail.interest.toLocaleString()}</td>`;
+            html += `<td>$${detail.balance.toLocaleString()}</td>`;
+            html += '</tr>';
+        });
+        
+        html += '<tr class="total-row">';
+        html += '<td colspan="2">總計</td>';
+        html += `<td>$${result.totalPayment.toLocaleString()}</td>`;
+        html += `<td>$${(result.totalPayment - result.totalInterest).toLocaleString()}</td>`;
+        html += `<td>$${result.totalInterest.toLocaleString()}</td>`;
+        html += '<td>$0</td>';
+        html += '</tr>';
+        
+        html += '</tbody></table>';
+    }
+    
+    return html;
+}
+
+// 生成多期比較表格（從你的檔案採用）
+function generateComparisonTable(results) {
+    if (!results || results.length === 0) return '<div>無比較資料</div>';
+    
+    let html = '<table class="comparison-table">';
+    html += '<thead><tr>';
+    html += '<th>期數</th><th>月付金額</th><th>總利息</th><th>總付款</th>';
+    html += '</tr></thead><tbody>';
+    
+    results.forEach(result => {
+        html += '<tr>';
+        html += `<td>${result.terms}期</td>`;
+        html += `<td>$${result.monthlyPayment.toLocaleString()}</td>`;
+        html += `<td>$${result.totalInterest.toLocaleString()}</td>`;
+        html += `<td>$${result.totalPayment.toLocaleString()}</td>`;
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    return html;
+}
+
+// 解析分期試算指令（完整修正版）
+function parseInstallmentCommand(command) {
+    try {
+        const lines = command.trim().split('\n');
+        const firstLine = lines[0].trim();
+        
+        // 上次條件
+        if (firstLine === '上次' && lastCalculation) {
+            return lastCalculation;
+        }
+        
+        // 單筆分期：單分 金額 期數/利率 入帳日期 首期結帳日
+        const singleMatch = firstLine.match(/^單分\s+(\d+)\s+(\d+)\/(\d+(?:\.\d+)?)\s+(\d+)\s+(\d+)$/);
+        if (singleMatch) {
+            lastCalculation = {
+                type: 'single',
+                amount: parseInt(singleMatch[1]),
+                terms: parseInt(singleMatch[2]),
+                rate: parseFloat(singleMatch[3]),
+                depositDate: convertToROCDate(singleMatch[4]),
+                firstPaymentDate: convertToROCDate(singleMatch[5])
+            };
+            return lastCalculation;
+        }
+        
+        // 帳單分期：帳分 金額 期數/利率 首期帳單月份
+        const billMatch = firstLine.match(/^帳分\s+(\d+)\s+(\d+)\/(\d+(?:\.\d+)?)\s+(\d+)$/);
+        if (billMatch) {
+            lastCalculation = {
+                type: 'bill',
+                amount: parseInt(billMatch[1]),
+                terms: parseInt(billMatch[2]),
+                rate: parseFloat(billMatch[3]),
+                firstBillMonth: convertToROCDate(billMatch[4])
+            };
+            return lastCalculation;
+        }
+        
+        // 無息分期：無息 金額 期數 首期帳單月份
+        const noInterestMatch = firstLine.match(/^無息\s+(\d+)\s+(\d+)\s+(\d+)$/);
+        if (noInterestMatch) {
+            lastCalculation = {
+                type: 'noInterest',
+                amount: parseInt(noInterestMatch[1]),
+                terms: parseInt(noInterestMatch[2]),
+                firstBillMonth: convertToROCDate(noInterestMatch[3])
+            };
+            return lastCalculation;
+        }
+        
+        // 多期試算：多期 金額 利率 [參數...]
+        const multiTermMatch = firstLine.match(/^多期\s+(\d+)\s+(\d+(?:\.\d+)?)\s*(.*)$/);
+        if (multiTermMatch) {
+            const params = multiTermMatch[3].trim().split(/\s+/).filter(p => p);
+            if (params.length === 1) {
+                // 帳單分期格式：多期 金額 利率 首期帳單月份
+                lastCalculation = {
+                    type: 'multiTerm',
+                    amount: parseInt(multiTermMatch[1]),
+                    rate: parseFloat(multiTermMatch[2]),
+                    firstBillMonth: convertToROCDate(params[0])
+                };
+            } else if (params.length === 2) {
+                // 單筆分期格式：多期 金額 利率 入帳日期 首期結帳日
+                lastCalculation = {
+                    type: 'multiTerm',
+                    amount: parseInt(multiTermMatch[1]),
+                    rate: parseFloat(multiTermMatch[2]),
+                    depositDate: convertToROCDate(params[0]),
+                    firstPaymentDate: convertToROCDate(params[1])
+                };
+            } else {
+                // 無參數：多期 金額 利率
+                lastCalculation = {
+                    type: 'multiTerm',
+                    amount: parseInt(multiTermMatch[1]),
+                    rate: parseFloat(multiTermMatch[2])
+                };
+            }
+            return lastCalculation;
+        }
+        
+        // 多筆分期：多筆 筆數
+        const multiMatch = firstLine.match(/^多筆\s+(\d+)$/);
+        if (multiMatch && lines.length > 1) {
+            const count = parseInt(multiMatch[1]);
+            const items = [];
+            
+            for (let i = 1; i <= count && i < lines.length; i++) {
+                const line = lines[i].trim();
+                const parts = line.split(/\s+/);
+                
+                // 跳過編號
+                let startIndex = 0;
+                if (/^\d+$/.test(parts[0])) {
+                    startIndex = 1;
+                }
+                
+                const type = parts[startIndex];
+                try {
+                    if (type === '帳分') {
+                        items.push({
+                            type: 'bill',
+                            amount: parseInt(parts[startIndex + 1]),
+                            terms: parseInt(parts[startIndex + 2]),
+                            rate: parseFloat(parts[startIndex + 3]),
+                            firstBillMonth: convertToROCDate(parts[startIndex + 4])
+                        });
+                    } else if (type === '單分') {
+                        items.push({
+                            type: 'single',
+                            amount: parseInt(parts[startIndex + 1]),
+                            terms: parseInt(parts[startIndex + 2]),
+                            rate: parseFloat(parts[startIndex + 3]),
+                            depositDate: convertToROCDate(parts[startIndex + 4]),
+                            firstPaymentDate: convertToROCDate(parts[startIndex + 5])
+                        });
+                    } else if (type === '無分') {
+                        items.push({
+                            type: 'noInterest',
+                            amount: parseInt(parts[startIndex + 1]),
+                            terms: parseInt(parts[startIndex + 2]),
+                            firstBillMonth: convertToROCDate(parts[startIndex + 3])
+                        });
+                    }
+                } catch (parseError) {
+                    console.error(`解析第${i}行錯誤:`, parseError);
+                }
+            }
+            
+            if (items.length > 0) {
+                lastCalculation = {
+                    type: 'multi',
+                    items: items
+                };
+                return lastCalculation;
+            }
+        }
+        
+        // 提前清償：清償 類型 參數...
+        const prepaymentMatch = firstLine.match(/^清償\s+(\S+)\s+(.+)$/);
+        if (prepaymentMatch) {
+            const type = prepaymentMatch[1];
+            const params = prepaymentMatch[2].split(/\s+/);
+            
+            try {
+                if (type === '帳分') {
+                    lastCalculation = {
+                        type: 'prepayment',
+                        subType: 'bill',
+                        amount: parseInt(params[0]),
+                        terms: parseInt(params[1]),
+                        rate: parseFloat(params[2]),
+                        firstBillMonth: convertToROCDate(params[3]),
+                        prepaymentMonth: convertToROCDate(params[4])
+                    };
+                } else if (type === '單分') {
+                    lastCalculation = {
+                        type: 'prepayment',
+                        subType: 'single',
+                        amount: parseInt(params[0]),
+                        terms: parseInt(params[1]),
+                        rate: parseFloat(params[2]),
+                        depositDate: convertToROCDate(params[3]),
+                        firstPaymentDate: convertToROCDate(params[4]),
+                        prepaymentMonth: convertToROCDate(params[5])
+                    };
+                } else if (type === '無分') {
+                    lastCalculation = {
+                        type: 'prepayment',
+                        subType: 'noInterest',
+                        amount: parseInt(params[0]),
+                        terms: parseInt(params[1]),
+                        firstBillMonth: convertToROCDate(params[2]),
+                        prepaymentMonth: convertToROCDate(params[3])
+                    };
+                }
+                return lastCalculation;
+            } catch (prepayError) {
+                console.error('清償解析錯誤:', prepayError);
+            }
+        }
+        
+        // 多筆清償：清償月份 多筆清償
+        const multiPrepaymentMatch = firstLine.match(/^(\d+)\s+多筆清償$/);
+        if (multiPrepaymentMatch && lines.length > 1) {
+            const prepaymentMonth = convertToROCDate(multiPrepaymentMatch[1]);
+            const items = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                const parts = line.split(/\s+/);
+                
+                // 跳過編號
+                let startIndex = 0;
+                if (/^\d+$/.test(parts[0])) {
+                    startIndex = 1;
+                }
+                
+                const type = parts[startIndex];
+                try {
+                    if (type === '帳分') {
+                        items.push({
+                            type: 'bill',
+                            amount: parseInt(parts[startIndex + 1]),
+                            terms: parseInt(parts[startIndex + 2]),
+                            rate: parseFloat(parts[startIndex + 3]),
+                            firstBillMonth: convertToROCDate(parts[startIndex + 4]),
+                            prepaymentMonth: prepaymentMonth
+                        });
+                    } else if (type === '單分') {
+                        items.push({
+                            type: 'single',
+                            amount: parseInt(parts[startIndex + 1]),
+                            terms: parseInt(parts[startIndex + 2]),
+                            rate: parseFloat(parts[startIndex + 3]),
+                            depositDate: convertToROCDate(parts[startIndex + 4]),
+                            firstPaymentDate: convertToROCDate(parts[startIndex + 5]),
+                            prepaymentMonth: prepaymentMonth
+                        });
+                    } else if (type === '無分') {
+                        items.push({
+                            type: 'noInterest',
+                            amount: parseInt(parts[startIndex + 1]),
+                            terms: parseInt(parts[startIndex + 2]),
+                            firstBillMonth: convertToROCDate(parts[startIndex + 3]),
+                            prepaymentMonth: prepaymentMonth
+                        });
+                    }
+                } catch (multiPrepayError) {
+                    console.error(`多筆清償第${i}行錯誤:`, multiPrepayError);
+                }
+            }
+            
+            if (items.length > 0) {
+                lastCalculation = {
+                    type: 'multiPrepayment',
+                    items: items
+                };
+                return lastCalculation;
+            }
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('指令解析錯誤:', error);
+        return null;
+    }
+}
+
+// 計算提前清償（修正版）
+function calculatePrepayment(params) {
+    try {
+        // 先計算完整的分期計畫
+        const result = calculateInstallmentDetails(
+            params.amount,
+            params.rate || 0,
+            params.terms,
+            params.firstBillMonth || params.firstPaymentDate,
+            params.subType
+        );
+        
+        if (!result) {
+            return '<div class="hint-installment">❌ 錯誤：無法計算分期明細</div>';
+        }
+        
+        // 找出清償月份對應的期數
+        let prepaymentPeriod = 0;
+        for (let i = 0; i < result.details.length; i++) {
+            if (result.details[i].billMonth === params.prepaymentMonth) {
+                prepaymentPeriod = i + 1;
+                break;
+            }
+        }
+        
+        if (prepaymentPeriod === 0 || prepaymentPeriod > params.terms) {
+            return `<div class="hint-installment">❌ 錯誤：清償月份 ${params.prepaymentMonth} 不在分期範圍內</div>`;
+        }
+        
+        // 計算剩餘本金（清償前一期的餘額）
+        let remainingPrincipal = 0;
+        if (prepaymentPeriod > 1) {
+            remainingPrincipal = result.details[prepaymentPeriod - 2].balance;
+        } else {
+            remainingPrincipal = params.amount;
+        }
+        
+        // 計算違約金
+        let penaltyFee = 0;
+        if (params.rate > 0 && params.subType !== 'noInterest') {
+            if (prepaymentPeriod <= 1) {
+                penaltyFee = PENALTY_RULES[1];
+            } else if (prepaymentPeriod <= 6) {
+                penaltyFee = PENALTY_RULES[2];
+            } else if (prepaymentPeriod <= 12) {
+                penaltyFee = PENALTY_RULES[6];
+            }
+        }
+        
+        // 計算省下的利息（從清償期開始到最後的所有利息）
+        let savedInterest = 0;
+        for (let i = prepaymentPeriod - 1; i < result.details.length; i++) {
+            savedInterest += result.details[i].interest;
+        }
+        
+        // 格式化結果
+        let response = `<div class="hint-installment">`;
+        response += `<strong>提前清償試算結果</strong><br>`;
+        response += `類型：${params.subType === 'bill' ? '帳單分期' : params.subType === 'single' ? '單筆分期' : '無息分期'}<br>`;
+        response += `本金：$${params.amount.toLocaleString()} | `;
+        response += `期數：${params.terms}期 | `;
+        response += `利率：${params.rate || 0}%<br>`;
+        response += `<hr>`;
+        response += `清償時點：第${prepaymentPeriod}期帳單月份（${params.prepaymentMonth}）<br>`;
+        response += `剩餘本金：$${remainingPrincipal.toLocaleString()}<br>`;
+        
+        if (penaltyFee > 0) {
+            response += `違約金：$${penaltyFee.toLocaleString()}<br>`;
+            response += `總清償金額：$${(remainingPrincipal + penaltyFee).toLocaleString()}<br>`;
+            response += `<hr>`;
+            response += `省下利息：$${savedInterest.toLocaleString()}<br>`;
+            response += `扣除違約金後淨省：$${(savedInterest - penaltyFee).toLocaleString()}<br>`;
+            
+            if (savedInterest > penaltyFee) {
+                response += `<div class="prepayment-favorable">`;
+                response += `✅ 建議：提前清償【有利】<br>`;
+                response += `您可節省 $${(savedInterest - penaltyFee).toLocaleString()}`;
+                response += `</div>`;
+            } else {
+                response += `<div class="prepayment-unfavorable">`;
+                response += `❌ 建議：提前清償【不利】<br>`;
+                response += `您將多付 $${(penaltyFee - savedInterest).toLocaleString()}`;
+                response += `</div>`;
+            }
+        } else {
+            response += `違約金：$0（無息分期免違約金）<br>`;
+            response += `總清償金額：$${remainingPrincipal.toLocaleString()}<br>`;
+            response += `<div class="prepayment-favorable">`;
+            response += `✅ 無息分期可隨時清償，無需支付違約金`;
+            response += `</div>`;
+        }
+        
+        response += `</div>`;
+        
+        return response;
+    } catch (error) {
+        console.error('提前清償計算錯誤:', error);
+        return '<div class="hint-installment">❌ 錯誤：提前清償計算失敗</div>';
+    }
+}
+
+// 執行分期試算（完整修正版）
+function executeInstallmentCalculation(params) {
+    try {
+        if (!params) return null;
+        
+        let result = '';
+        
+        switch (params.type) {
+            case 'single':
+                const singleResult = calculateInstallmentDetails(
+                    params.amount,
+                    params.rate,
+                    params.terms,
+                    params.firstPaymentDate,
+                    'single'
+                );
+                if (singleResult) {
+                    result = `<div class="hint-installment">`;
+                    result += `<strong>單筆分期試算結果</strong><br>`;
+                    result += `金額: $${params.amount.toLocaleString()} | `;
+                    result += `期數: ${params.terms}期 | 利率: ${params.rate}%<br>`;
+                    result += generateInstallmentTable(singleResult, true);
+                    result += `</div>`;
+                }
+                break;
+                
+            case 'bill':
+                const billResult = calculateInstallmentDetails(
+                    params.amount,
+                    params.rate,
+                    params.terms,
+                    params.firstBillMonth,
+                    'bill'
+                );
+                if (billResult) {
+                    result = `<div class="hint-installment">`;
+                    result += `<strong>帳單分期試算結果</strong><br>`;
+                    result += `金額: $${params.amount.toLocaleString()} | `;
+                    result += `期數: ${params.terms}期 | 利率: ${params.rate}%<br>`;
+                    result += generateInstallmentTable(billResult, true);
+                    result += `</div>`;
+                }
+                break;
+                
+            case 'noInterest':
+                const noInterestResult = calculateInstallmentDetails(
+                    params.amount,
+                    0,
+                    params.terms,
+                    params.firstBillMonth,
+                    'noInterest'
+                );
+                if (noInterestResult) {
+                    result = `<div class="hint-installment">`;
+                    result += `<strong>無息分期試算結果</strong><br>`;
+                    result += `金額: $${params.amount.toLocaleString()} | `;
+                    result += `期數: ${params.terms}期<br>`;
+                    result += generateInstallmentTable(noInterestResult, true);
+                    result += `</div>`;
+                }
+                break;
+                
+            case 'multiTerm':
+                const termOptions = [3, 6, 12, 18, 24, 30, 36];
+                const multiResults = [];
+                
+                termOptions.forEach(terms => {
+                    const termResult = calculateInstallmentDetails(
+                        params.amount,
+                        params.rate || 0,
+                        terms,
+                        params.firstBillMonth || params.firstPaymentDate || '11403'
+                    );
+                    if (termResult) {
+                        multiResults.push({
+                            terms: terms,
+                            monthlyPayment: termResult.monthlyPayment,
+                            totalInterest: termResult.totalInterest,
+                            totalPayment: termResult.totalPayment
+                        });
+                    }
+                });
+                
+                if (multiResults.length > 0) {
+                    result = `<div class="hint-installment">`;
+                    result += `<strong>多期試算比較</strong><br>`;
+                    result += `金額: $${params.amount.toLocaleString()} | 利率: ${params.rate || 0}%<br>`;
+                    result += generateComparisonTable(multiResults);
+                    result += `</div>`;
+                }
+                break;
+                
+            case 'multi':
+                result = `<div class="hint-installment">`;
+                result += `<strong>多筆分期試算結果</strong><br>`;
+                let totalMonthly = 0;
+                let totalAmount = 0;
+                
+                params.items.forEach((item, index) => {
+                    let itemResult;
+                    if (item.type === 'single') {
+                        itemResult = calculateInstallmentDetails(
+                            item.amount,
+                            item.rate,
+                            item.terms,
+                            item.firstPaymentDate,
+                            'single'
+                        );
+                    } else if (item.type === 'bill') {
+                        itemResult = calculateInstallmentDetails(
+                            item.amount,
+                            item.rate,
+                            item.terms,
+                            item.firstBillMonth,
+                            'bill'
+                        );
+                    } else if (item.type === 'noInterest') {
+                        itemResult = calculateInstallmentDetails(
+                            item.amount,
+                            0,
+                            item.terms,
+                            item.firstBillMonth,
+                            'noInterest'
+                        );
+                    }
+                    
+                    if (itemResult) {
+                        totalMonthly += itemResult.monthlyPayment;
+                        totalAmount += item.amount;
+                        
+                        result += `<div class="installment-separator"></div>`;
+                                                result += `<strong>第${index + 1}筆: ${item.type === 'single' ? '單筆' : item.type === 'bill' ? '帳單' : '無息'}分期</strong><br>`;
+                        result += `金額: $${item.amount.toLocaleString()} | `;
+                        result += `期數: ${item.terms}期 | `;
+                        result += `利率: ${item.rate || 0}%<br>`;
+                        result += generateInstallmentTable(itemResult, true);
+                    }
+                });
+                
+                result += `<div class="installment-separator"></div>`;
+                result += `<strong>總計</strong><br>`;
+                result += `總金額: $${totalAmount.toLocaleString()}<br>`;
+                result += `每月總付: $${totalMonthly.toLocaleString()}`;
+                result += `</div>`;
+                break;
+                
+            case 'prepayment':
+                result = calculatePrepayment(params);
+                break;
+                
+            case 'multiPrepayment':
+                result = `<div class="hint-installment">`;
+                result += `<strong>多筆清償試算結果</strong><br>`;
+                let totalPenalty = 0;
+                let totalRemaining = 0;
+                let totalSaved = 0;
+                
+                params.items.forEach((item, index) => {
+                    const prepayResult = calculateSinglePrepayment(item);
+                    if (prepayResult) {
+                        totalPenalty += prepayResult.penalty;
+                        totalRemaining += prepayResult.remainingPrincipal;
+                        totalSaved += prepayResult.savedInterest;
+                        
+                        result += `<div class="installment-separator"></div>`;
+                        result += `<strong>第${index + 1}筆: ${item.type === 'single' ? '單筆' : item.type === 'bill' ? '帳單' : '無息'}分期</strong><br>`;
+                        result += `原始金額: $${item.amount.toLocaleString()}<br>`;
+                        result += `剩餘本金: $${prepayResult.remainingPrincipal.toLocaleString()}<br>`;
+                        result += `違約金: $${prepayResult.penalty.toLocaleString()}<br>`;
+                        result += `節省利息: $${prepayResult.savedInterest.toLocaleString()}<br>`;
+                    }
+                });
+                
+                result += `<div class="installment-separator"></div>`;
+                result += `<strong>總計</strong><br>`;
+                result += `總剩餘本金: $${totalRemaining.toLocaleString()}<br>`;
+                result += `總違約金: $${totalPenalty.toLocaleString()}<br>`;
+                result += `總清償金額: $${(totalRemaining + totalPenalty).toLocaleString()}<br>`;
+                result += `總節省利息: $${totalSaved.toLocaleString()}<br>`;
+                
+                if (totalSaved > totalPenalty) {
+                    result += `<div class="prepayment-favorable">`;
+                    result += `✅ 建議：整體提前清償【有利】<br>`;
+                    result += `您可節省 $${(totalSaved - totalPenalty).toLocaleString()}`;
+                    result += `</div>`;
+                } else {
+                    result += `<div class="prepayment-unfavorable">`;
+                    result += `❌ 建議：整體提前清償【不利】<br>`;
+                    result += `您將多付 $${(totalPenalty - totalSaved).toLocaleString()}`;
+                    result += `</div>`;
+                }
+                
+                result += `</div>`;
+                break;
+        }
+        
+        return result;
+    } catch (error) {
+        console.error('試算執行錯誤:', error);
+        return '<div class="hint-installment">❌ 錯誤：試算執行失敗</div>';
+    }
+}
+
+// 計算單筆提前清償（修正版）
+function calculateSinglePrepayment(params) {
+    try {
+        // 先計算完整的分期計畫
+        const result = calculateInstallmentDetails(
+            params.amount,
+            params.rate || 0,
+            params.terms,
+            params.firstBillMonth || params.firstPaymentDate,
+            params.type
+        );
+        
+        if (!result) return null;
+        
+        // 找出清償月份對應的期數
+        let prepaymentPeriod = 0;
+        for (let i = 0; i < result.details.length; i++) {
+            if (result.details[i].billMonth === params.prepaymentMonth) {
+                prepaymentPeriod = i + 1;
+                break;
+            }
+        }
+        
+        if (prepaymentPeriod === 0) {
+            prepaymentPeriod = 3; // 預設第3期
+        }
+        
+        // 計算剩餘本金
+        let remainingPrincipal = 0;
+        if (prepaymentPeriod > 1) {
+            remainingPrincipal = result.details[prepaymentPeriod - 2].balance;
+        } else {
+            remainingPrincipal = params.amount;
+        }
+        
+        // 計算違約金
+        let penalty = 0;
+        if (params.rate > 0 && params.type !== 'noInterest') {
+            if (prepaymentPeriod <= 1) {
+                penalty = PENALTY_RULES[1];
+            } else if (prepaymentPeriod <= 6) {
+                penalty = PENALTY_RULES[2];
+            } else if (prepaymentPeriod <= 12) {
+                penalty = PENALTY_RULES[6];
+            }
+        }
+        
+        // 計算節省利息
+        let savedInterest = 0;
+        for (let i = prepaymentPeriod - 1; i < result.details.length; i++) {
+            savedInterest += result.details[i].interest;
+        }
+        
+        return {
+            prepaymentPeriod: prepaymentPeriod,
+            remainingPrincipal: remainingPrincipal,
+            penalty: penalty,
+            savedInterest: savedInterest,
+            isWorthIt: savedInterest > penalty
+        };
+    } catch (error) {
+        console.error('單筆清償計算錯誤:', error);
+        return null;
+    }
+}
+
+// ========== 智能計算功能（支援空格和括號） ==========
+
+// 增強版計算器 - 支援空格代替加號
+function enhancedCalculate(expression) {
+    try {
+        // 先處理空格代替加號的情況
+        // 將連續的數字和空格模式替換為加號
+        let processed = expression.replace(/(\d+)\s+(\d+)/g, '$1+$2');
+        
+        // 重複處理直到沒有更多的空格模式
+        while (/(\d+)\s+(\d+)/.test(processed)) {
+            processed = processed.replace(/(\d+)\s+(\d+)/g, '$1+$2');
+        }
+        
+        // 檢查是否為有效的數學表達式
+        if (!/^[\d\+\-\*\/\(\)\.\s]+$/.test(processed)) {
+            return null;
+        }
+        
+        // 使用 Function 構造器計算（更安全）
+        const result = Function('"use strict"; return (' + processed + ')')();
+        
+        return {
+            expression: processed,
+            result: result
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+// ========== 全域函數定義 ==========
+
+// 建立新便利貼
+window.createNewNote = function() {
+    const noteId = generateId();
+    const newNote = {
+        id: noteId,
+        title: '',
+        content: '',
+        processedContent: '',
+        hints: [],
+        color: 'yellow',
+        type: 'note',
+        customerName: '',
+        customerPhone: '',
+        callbackTime: '',
+        calculationData: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    notes.unshift(newNote);
+    saveNotes();
+    renderNotes();
+    
+    // 自動聚焦到新便利貼的標題
+    setTimeout(() => {
+        const titleInput = document.querySelector(`#note-${noteId} .note-title`);
+        if (titleInput) titleInput.focus();
+    }, 100);
+}
+
+// 刪除便利貼
+window.deleteNote = function(id) {
+    if (confirm('確定要刪除這個便利貼嗎？')) {
+        notes = notes.filter(n => n.id !== id);
+        saveNotes();
+        renderNotes();
+        showNotification('success', '便利貼已刪除');
+    }
+}
+
+// 切換設定面板
+window.toggleSettings = function(noteId) {
+    const settings = document.getElementById(`settings-${noteId}`);
+    const allSettings = document.querySelectorAll('.quick-settings');
+    
+    // 關閉其他設定面板
+    allSettings.forEach(s => {
+        if (s.id !== `settings-${noteId}`) {
+            s.classList.remove('show');
+        }
+    });
+    
+    settings.classList.toggle('show');
+}
+
+// 改變顏色
+window.changeColor = function(noteId, color) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    note.color = color;
+    note.updatedAt = new Date().toISOString();
+    saveNotes();
+    renderNotes();
+}
+
+// 更新便利貼（一般更新）
+window.updateNote = function(id, field, value) {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    
+    note[field] = value;
+    note.updatedAt = new Date().toISOString();
+    
+    saveNotes();
+    
+    // 如果改變類型為callback，重新渲染以顯示回電時間欄位
+    if (field === 'type') {
+        renderNotes();
+    }
+}
+
+// 延遲更新便利貼（解決輸入延遲問題）
+window.updateNoteDelayed = function(id, field, value) {
+    // 清除之前的計時器
+    if (updateTimer) {
+        clearTimeout(updateTimer);
+    }
+    
+    // 立即更新資料（但不重新渲染）
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    
+    note[field] = value;
+    
+    // 延遲處理智能識別
+    updateTimer = setTimeout(() => {
+        updateNoteWithSmartProcessing(id, field, value);
+    }, 800); // 延遲800毫秒
+}
+
+// 處理標題輸入時按Enter
+window.handleTitleKey = function(event, noteId) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const contentArea = document.querySelector(`#note-${noteId} .note-content`);
+        if (contentArea) contentArea.focus();
+    }
+}
+
+// 切換智能提示
+window.toggleSmartHints = function() {
+    smartHintsEnabled = !smartHintsEnabled;
+    const toggle = document.getElementById('smartToggle');
+    
+    if (smartHintsEnabled) {
+        toggle.classList.add('active');
+        toggle.innerHTML = '<i class="fas fa-magic"></i><span>智能提示：開啟</span>';
+    } else {
+        toggle.classList.remove('active');
+        toggle.innerHTML = '<i class="fas fa-magic"></i><span>智能提示：關閉</span>';
+    }
+    
+    renderNotes();
+}
+
+// 顯示試算說明
+window.showCalculationHelp = function() {
+    document.getElementById('helpOverlay').classList.add('show');
+    document.getElementById('helpDialog').classList.add('show');
+}
+
+// 隱藏試算說明
+window.hideCalculationHelp = function() {
+    document.getElementById('helpOverlay').classList.remove('show');
+    document.getElementById('helpDialog').classList.remove('show');
+}
+
+// 匯出資料
+window.exportData = function() {
+    const data = {
+        version: '6.0',
+        exportDate: new Date().toISOString(),
+        notes: notes,
+        lastCalculation: lastCalculation
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `smart_sticky_notes_${new Date().toLocaleDateString('zh-TW').replace(/\//g, '-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification('success', '資料已匯出');
+}
+
+// 匯入資料
+window.importData = function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.notes || !Array.isArray(data.notes)) {
+                throw new Error('無效的檔案格式');
+            }
+            
+            if (confirm('匯入將覆蓋現有資料，確定繼續？')) {
+                notes = data.notes;
+                lastCalculation = data.lastCalculation || null;
+                saveNotes();
+                renderNotes();
+                showNotification('success', `已匯入 ${notes.length} 個便利貼`);
+            }
+        } catch (error) {
+            showNotification('error', '匯入失敗：' + error.message);
+        }
+        event.target.value = '';
+    };
+    reader.readAsText(file);
+}
+
+// 快速生肖查詢
+window.quickZodiac = function() {
+    const rocYear = parseInt(document.getElementById('rocYear').value);
+    if (!rocYear || rocYear < 1) {
+        document.getElementById('zodiacResult').textContent = '—';
+        return;
+    }
+    
+    const result = calculateZodiacFromROC(rocYear);
+    document.getElementById('zodiacResult').innerHTML = 
+        `${result.animal}年生，約${result.age}歲`;
+}
+
+// 快速繳款日計算
+window.quickPayment = function() {
+    const billingDay = parseInt(document.getElementById('billingDay').value);
+    if (!billingDay) {
+        document.getElementById('paymentResult').textContent = '—';
+        return;
+    }
+    
+    const paymentInfo = calculatePaymentDateCurrentMonth(billingDay);
+    const today = new Date();
+    let billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+    if (billingDate < today) {
+        billingDate.setMonth(billingDate.getMonth() + 1);
+    }
+    
+    const payDate = new Date(billingDate);
+    payDate.setDate(payDate.getDate() + 16);
+    
+    document.getElementById('paymentResult').textContent = 
+        `繳款截止：${payDate.toLocaleDateString('zh-TW')}`;
+}
+
+// 快速計算
+window.quickCalculate = function(event) {
+    if (event.key === 'Enter') {
+        const expression = document.getElementById('quickCalc').value;
+        const result = enhancedCalculate(expression);
+        
+        if (result) {
+            document.getElementById('calcResult').textContent = `= ${result.result}`;
+        } else {
+            document.getElementById('calcResult').textContent = '輸入錯誤';
+        }
+    }
+}
+
+// ========== 內部功能函數 ==========
+
+// 渲染所有便利貼
+function renderNotes() {
+    const board = document.getElementById('notesBoard');
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // 保留新增按鈕
+    board.innerHTML = `
+        <div class="sticky-note add-note-card" id="addNoteBtn">
+            <i class="fas fa-plus"></i>
+        </div>
+    `;
+    
+    // 重新綁定新增按鈕事件
+    document.getElementById('addNoteBtn').addEventListener('click', createNewNote);
+    
+    // 過濾並渲染便利貼
+    const filteredNotes = notes.filter(note => {
+        if (!searchTerm) return true;
+        return note.title.toLowerCase().includes(searchTerm) ||
+               note.content.toLowerCase().includes(searchTerm) ||
+               note.customerName?.toLowerCase().includes(searchTerm) ||
+               note.customerPhone?.includes(searchTerm);
+    });
+    
+    filteredNotes.forEach(note => {
+        const noteElement = createNoteElement(note);
+        board.appendChild(noteElement);
+    });
+    
+    updateStats();
+}
+
+// 建立便利貼元素（修正版 - 自動判斷是否有試算結果）
+function createNoteElement(note) {
+    const div = document.createElement('div');
+    
+    // 檢查是否包含分期試算結果
+    const hasCalculation = note.hints && note.hints.some(hint => 
+        hint.type === 'calculation-result' && hint.html && hint.html.includes('installment-table')
+    );
+    
+    div.className = `sticky-note ${note.color} ${hasCalculation ? 'has-calculation' : ''}`;
+    div.id = `note-${note.id}`;
+    
+    const typeLabel = note.type === 'todo' ? '<span class="note-type todo">待辦</span>' : 
+                     note.type === 'callback' ? '<span class="note-type callback">待回電</span>' :
+                     note.type === 'calculation' ? '<span class="note-type calculation">試算</span>' : '';
+    
+    const customerInfo = [];
+    if (note.customerName) customerInfo.push(`<i class="fas fa-user"></i> ${note.customerName}`);
+    if (note.customerPhone) customerInfo.push(`<i class="fas fa-phone"></i> ${note.customerPhone}`);
+    
+    // 生成智能提示
+    let hintsHtml = '';
+    if (smartHintsEnabled && note.hints && note.hints.length > 0) {
+        hintsHtml = '<div class="smart-hints">';
+        note.hints.forEach(hint => {
+            if (hint.type === 'calculation-result') {
+                hintsHtml += hint.html;
+            } else {
+                hintsHtml += `<span class="hint-item ${hint.type}">${hint.text}</span>`;
+            }
+        });
+        hintsHtml += '</div>';
+    }
+    
+    div.innerHTML = `
+        <div class="note-header">
+            <input type="text" class="note-title" placeholder="輸入標題..." 
+                   value="${note.title}" 
+                   oninput="updateNoteDelayed('${note.id}', 'title', this.value)"
+                   onkeydown="handleTitleKey(event, '${note.id}')">
+            <div class="note-actions">
+                <button onclick="toggleSettings('${note.id}')" title="設定">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button onclick="deleteNote('${note.id}')" title="刪除">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="note-content-wrapper">
+            <textarea class="note-content" placeholder="輸入內容...支援生肖查詢、繳款日計算、數學計算、分期試算等功能" 
+                      oninput="updateNoteDelayed('${note.id}', 'content', this.value)">${note.content}</textarea>
+            ${hintsHtml}
+        </div>
+        <div class="note-footer">
+            <div class="note-info">
+                ${customerInfo.join(' ')}
+            </div>
+            <div>
+                ${typeLabel}
+                <span>${new Date(note.createdAt).toLocaleDateString('zh-TW')}</span>
+            </div>
+        </div>
+        <div class="quick-settings" id="settings-${note.id}">
+            <div class="setting-group">
+                <label>顏色</label>
+                <div class="color-picker">
+                    <div class="color-option ${note.color === 'yellow' ? 'active' : ''}" 
+                         style="background: #fff9c4" onclick="changeColor('${note.id}', 'yellow')"></div>
+                    <div class="color-option ${note.color === 'pink' ? 'active' : ''}" 
+                         style="background: #fce4ec" onclick="changeColor('${note.id}', 'pink')"></div>
+                    <div class="color-option ${note.color === 'blue' ? 'active' : ''}" 
+                         style="background: #e3f2fd" onclick="changeColor('${note.id}', 'blue')"></div>
+                    <div class="color-option ${note.color === 'green' ? 'active' : ''}" 
+                         style="background: #e8f5e9" onclick="changeColor('${note.id}', 'green')"></div>
+                    <div class="color-option ${note.color === 'orange' ? 'active' : ''}" 
+                         style="background: #fff3e0" onclick="changeColor('${note.id}', 'orange')"></div>
+                </div>
+            </div>
+            <div class="setting-group">
+                <label>類型</label>
+                <select onchange="updateNote('${note.id}', 'type', this.value)">
+                    <option value="note" ${note.type === 'note' ? 'selected' : ''}>一般便籤</option>
+                    <option value="todo" ${note.type === 'todo' ? 'selected' : ''}>待辦事項</option>
+                    <option value="callback" ${note.type === 'callback' ? 'selected' : ''}>待回電</option>
+                    <option value="calculation" ${note.type === 'calculation' ? 'selected' : ''}>試算記錄</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <label>客戶姓名</label>
+                <input type="text" value="${note.customerName || ''}" 
+                       oninput="updateNote('${note.id}', 'customerName', this.value)">
+            </div>
+            <div class="setting-group">
+                <label>客戶電話</label>
+                <input type="tel" value="${note.customerPhone || ''}" 
+                       oninput="updateNote('${note.id}', 'customerPhone', this.value)">
+            </div>
+            ${note.type === 'callback' ? `
+            <div class="setting-group">
+                <label>回電時間</label>
+                <input type="datetime-local" value="${note.callbackTime || ''}" 
+                       onchange="updateNote('${note.id}', 'callbackTime', this.value)">
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    return div;
+}
+
+// 智能處理內容（修正版）
+function updateNoteWithSmartProcessing(id, field, value) {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    
+    // 記錄之前是否有試算結果
+    const hadCalculation = note.hints && note.hints.some(hint => 
+        hint.type === 'calculation-result' && hint.html && hint.html.includes('installment-table')
+    );
+    
+    // 只處理內容欄位的智能識別
+    if (field === 'content' && smartHintsEnabled) {
+        note.hints = [];
+        note.processedContent = value;
+        
+        // 1. 檢查是否為分期試算指令
+        const calculationParams = parseInstallmentCommand(value);
+        if (calculationParams) {
+            const calculationResult = executeInstallmentCalculation(calculationParams);
+            if (calculationResult) {
+                note.hints.push({
+                    type: 'calculation-result',
+                    html: calculationResult
+                });
+                note.type = 'calculation';
+                note.calculationData = calculationParams;
+            }
+        } else {
+            // 2. 生肖查詢 - 匹配 "XX年生" 或 "民國XX年"
+            const zodiacPattern = /(\d{1,3})\s*年\s*生?/g;
+            let match;
+            while ((match = zodiacPattern.exec(value)) !== null) {
+                const rocYear = parseInt(match[1]);
+                if (rocYear >= 1 && rocYear <= 150) {
+                    const zodiac = calculateZodiacFromROC(rocYear);
+                    note.hints.push({
+                        type: 'hint-zodiac',
+                        text: `${rocYear}年 → ${zodiac.animal}年生 (${zodiac.age}歲)`
+                    });
+                }
+            }
+            
+            // 3. 繳款日計算 - 支援完整日期格式
+            const paymentPatterns = [
+                /(\d{1,2})[\/月](\d{1,2})[日號]?\s*結帳/g,  // 6/18結帳 或 6月18日結帳
+                /(\d{1,2})[日號]\s*結帳/g                    // 18號結帳
+            ];
+            
+            // 嘗試完整日期格式
+            const fullDatePattern = /(\d{1,2})[\/月](\d{1,2})[日號]?\s*結帳/g;
+            while ((match = fullDatePattern.exec(value)) !== null) {
+                const month = parseInt(match[1]);
+                const day = parseInt(match[2]);
+                
+                // 檢查是否為偶數日
+                if (day >= 2 && day <= 26 && day % 2 === 0) {
+                    const paymentInfo = calculatePaymentDateWithMonth(month, day);
+                    note.hints.push({
+                        type: 'hint-payment',
+                        text: `${month}/${day}結帳 → ${paymentInfo.paymentDate}繳款`
+                    });
+                }
+            }
+            
+            // 嘗試只有日期的格式
+            const dayOnlyPattern = /(?<![\d\/月])(\d{1,2})[日號]\s*結帳/g;
+            while ((match = dayOnlyPattern.exec(value)) !== null) {
+                const day = parseInt(match[1]);
+                
+                // 檢查是否為偶數日
+                if (day >= 2 && day <= 26 && day % 2 === 0) {
+                    const paymentInfo = calculatePaymentDateCurrentMonth(day);
+                    note.hints.push({
+                        type: 'hint-payment',
+                        text: `${day}日結帳 → ${paymentInfo.paymentDate}繳款`
+                    });
+                }
+            }
+            
+            // 4. 數學計算 - 支援空格和括號
+            const calcPattern = /([\d\.\+\-\*\/\(\)\s]+)=/g;
+            while ((match = calcPattern.exec(value)) !== null) {
+                const expression = match[1].trim();
+                const calcResult = enhancedCalculate(expression);
+                if (calcResult) {
+                    note.hints.push({
+                        type: 'hint-calc',
+                        text: `${calcResult.expression} = ${calcResult.result}`
+                    });
+                }
+            }
+        }
+        
+        // 檢查現在是否有試算結果
+        const hasCalculation = note.hints && note.hints.some(hint => 
+            hint.type === 'calculation-result' && hint.html && hint.html.includes('installment-table')
+        );
+        
+        // 如果試算結果狀態改變，需要重新渲染整個便利貼板以調整布局
+        if (hadCalculation !== hasCalculation) {
+            note.updatedAt = new Date().toISOString();
+            saveNotes();
+            renderNotes();
+            return;
+        }
+        
+        // 更新提示區域
+        updateHintsDisplay(id, note.hints);
+    }
+    
+    note.updatedAt = new Date().toISOString();
+    saveNotes();
+}
+
+// 更新提示顯示（不重新渲染整個便利貼）
+function updateHintsDisplay(noteId, hints) {
+    const noteElement = document.getElementById(`note-${noteId}`);
+    if (!noteElement) return;
+    
+    const wrapper = noteElement.querySelector('.note-content-wrapper');
+    let hintsElement = wrapper.querySelector('.smart-hints');
+    
+    if (hints.length === 0) {
+        // 移除提示
+        if (hintsElement) {
+            hintsElement.remove();
+        }
+    } else {
+        // 更新或創建提示
+        if (!hintsElement) {
+            hintsElement = document.createElement('div');
+            hintsElement.className = 'smart-hints';
+            wrapper.appendChild(hintsElement);
+        }
+        
+        let hintsHtml = '';
+        hints.forEach(hint => {
+            if (hint.type === 'calculation-result') {
+                hintsHtml += hint.html;
+            } else {
+                hintsHtml += `<span class="hint-item ${hint.type}">${hint.text}</span>`;
+            }
+        });
+        hintsElement.innerHTML = hintsHtml;
+    }
+}
+
+// 計算生肖
+function calculateZodiacFromROC(rocYear) {
+    const adYear = rocYear + 1911;
+    const currentYear = new Date().getFullYear();
+    const zodiacAnimals = ['鼠', '牛', '虎', '兔', '龍', '蛇', '馬', '羊', '猴', '雞', '狗', '豬'];
+    const zodiac = zodiacAnimals[(adYear - 1900) % 12];
+    const age = currentYear - adYear;
+    
+    return {
+        animal: zodiac,
+        age: age
+    };
+}
+
+// 計算繳款日期（指定月份）
+function calculatePaymentDateWithMonth(month, billingDay) {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    // 如果指定的月份已過，則使用明年
+    let year = currentYear;
+    if (month < currentMonth) {
+        year = currentYear + 1;
+    }
+    
+    const billingDate = new Date(year, month - 1, billingDay);
+    const paymentDate = new Date(billingDate);
+    paymentDate.setDate(paymentDate.getDate() + 16);
+    
+    return {
+        billingDate: `${billingDate.getMonth() + 1}/${billingDate.getDate()}`,
+        paymentDate: `${paymentDate.getMonth() + 1}/${paymentDate.getDate()}`
+    };
+}
+
+// 計算繳款日期（當月）
+function calculatePaymentDateCurrentMonth(billingDay) {
+    const today = new Date();
+    let billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+    
+    if (billingDate < today) {
+        billingDate.setMonth(billingDate.getMonth() + 1);
+    }
+    
+    const paymentDate = new Date(billingDate);
+    paymentDate.setDate(paymentDate.getDate() + 16);
+    
+    return {
+        billingDate: `${billingDate.getMonth() + 1}/${billingDate.getDate()}`,
+        paymentDate: `${paymentDate.getMonth() + 1}/${paymentDate.getDate()}`
+    };
+}
+
+// 回電提醒
+function checkCallbacks() {
+    const now = new Date();
+    const callbacks = notes.filter(n => n.type === 'callback' && n.callbackTime && !n.reminded);
+    
+    callbacks.forEach(note => {
+        const callbackTime = new Date(note.callbackTime);
+        const timeDiff = callbackTime - now;
+        
+        if (timeDiff > 0 && timeDiff <= 30 * 60 * 1000) {
+            showNotification('warning', 
+                `提醒：${callbackTime.toLocaleTimeString('zh-TW')} 回電給 ${note.customerName || '客戶'}`);
+            note.reminded = true;
+            saveNotes();
+        }
+    });
+}
+
+// 顯示通知
+function showNotification(type, message) {
+    const container = document.getElementById('notificationContainer');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const icon = type === 'success' ? 'check-circle' : 
+                 type === 'warning' ? 'exclamation-circle' : 
+                 type === 'info' ? 'info-circle' : 'times-circle';
+    
+    notification.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+    `;
+    
+    container.appendChild(notification);
+    setTimeout(() => notification.remove(), 5000);
+}
+
+// 儲存資料
+function saveNotes() {
+    localStorage.setItem('smartStickyNotes', JSON.stringify(notes));
+}
+
+// 更新統計
+function updateStats() {
+    const today = new Date().toDateString();
+    const todayNotes = notes.filter(n => new Date(n.createdAt).toDateString() === today);
+    const todoNotes = notes.filter(n => n.type === 'todo');
+    const callbackNotes = notes.filter(n => n.type === 'callback');
+    const calculationNotes = notes.filter(n => n.type === 'calculation');
+    
+    document.getElementById('todayCount').textContent = todayNotes.length;
+    document.getElementById('totalCount').textContent = notes.length;
+    document.getElementById('todoCount').textContent = todoNotes.length;
+    document.getElementById('callbackCount').textContent = callbackNotes.length;
+    document.getElementById('calculationCount').textContent = calculationNotes.length;
+}
+
+// 工具函數
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 綁定事件監聽器
+    document.getElementById('addNoteBtn').addEventListener('click', createNewNote);
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+    document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', importData);
+    document.getElementById('searchInput').addEventListener('input', renderNotes);
+    document.getElementById('rocYear').addEventListener('keyup', quickZodiac);
+    document.getElementById('billingDay').addEventListener('change', quickPayment);
+    document.getElementById('quickCalc').addEventListener('keyup', quickCalculate);
+    document.getElementById('smartToggle').addEventListener('click', toggleSmartHints);
+    document.getElementById('calculationHelpBtn').addEventListener('click', showCalculationHelp);
+    document.getElementById('helpOverlay').addEventListener('click', hideCalculationHelp);
+    document.getElementById('helpCloseBtn').addEventListener('click', hideCalculationHelp);
+    
+    // 初始化渲染
+    renderNotes();
+    updateStats();
+    setInterval(checkCallbacks, 60000);
+    checkCallbacks();
+    
+    // ESC 鍵關閉說明對話框
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            hideCalculationHelp();
+        }
+    });
+    
+    // 點擊外部關閉設定面板
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.note-actions') && !e.target.closest('.quick-settings')) {
+            document.querySelectorAll('.quick-settings').forEach(s => {
+                s.classList.remove('show');
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>
