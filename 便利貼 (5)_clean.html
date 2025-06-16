@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能便利貼系統</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 頂部工具列 */
+.toolbar {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.toolbar h1 {
+    font-size: 1.8rem;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #219a52;
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138496;
+}
+
+.btn-warning {
+    background: #f39c12;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #e67e22;
+}
+
+/* 統計區 */
+.stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 150px;
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    color: #3498db;
+}
+
+.stat-content h3 {
+    font-size: 1.2rem;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.stat-content p {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* 便利貼容器 */
+.notes-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 100px;
+    padding: 50px !important; /* 增加padding避免放大後被截斷 */
+}
+
+/* 當有便利貼在編輯模式時，為容器增加額外的間距 */
+.notes-container:has(.note.editing) {
+    padding: 60px !important;
+}
+
+/* 如果瀏覽器不支援:has()，使用JavaScript動態添加類別 */
+.notes-container.has-editing {
+    padding: 60px !important;
+}
+
+/* 便利貼樣式 */
+.note {
+    background: #ffeaa7;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    transform-origin: center center; /* 設定變換原點為中心 */
+}
+
+.note:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.note.yellow { background: #ffeaa7; }
+.note.pink { background: #fd79a8; }
+.note.blue { background: #74b9ff; }
+.note.green { background: #55efc4; }
+.note.orange { background: #fdcb6e; }
+.note.purple { background: #a29bfe; }
+
+.note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.note-title {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c3e50;
+    width: 100%;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+}
+
+.note-actions {
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+    align-items: center;
+}
+
+.note-btn {
+    background: rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.note-btn:hover {
+    background: rgba(0,0,0,0.2);
+}
+
+.note-content {
+    flex: 1;
+    background: transparent;
+    border: none;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+    color: #2c3e50;
+    line-height: 1.4;
+    width: 100%;
+}
+
+/* 智能提示 */
+.smart-hints {
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding: 8px;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    margin-top: 10px;
+}
+
+.hint-item {
+    margin: 2px 0;
+    padding: 3px 6px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.hint-zodiac {
+    background: rgba(155, 89, 182, 0.1);
+    color: #8e44ad;
+}
+
+.hint-payment {
+    background: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+}
+
+.hint-calc {
+    background: rgba(241, 196, 15, 0.1);
+    color: #f39c12;
+}
+
+.note-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.note-type {
+    background: #ffffff !important;
+    border: 1px solid #3498db !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 0.8rem !important;
+    color: #2c3e50 !important;
+    outline: none !important;
+    margin-right: 8px !important;
+    font-weight: normal !important;
+    cursor: pointer !important;
+    min-width: 80px !important;
+    max-width: 120px !important;
+    height: auto !important;
+    vertical-align: middle !important;
+    box-shadow: none !important;
+}
+
+.note-type:focus {
+    border-color: #2980b9 !important;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2) !important;
+}
+
+.note-type:hover {
+    border-color: #2980b9 !important;
+    background: #f8f9fa !important;
+}
+
+.note-type option {
+    background: #ffffff !important;
+    color: #2c3e50 !important;
+    padding: 4px 8px !important;
+}
+
+.note-type option[value=""] {
+    color: #999 !important;
+    font-style: italic !important;
+}
+
+.note-type:invalid,
+.note-type[value=""] {
+    color: #999 !important;
+    font-style: italic !important;
+}
+
+.note-type.note { background: rgba(52, 152, 219, 0.2) !important; color: #2980b9 !important; }
+.note-type.todo { background: rgba(231, 76, 60, 0.2) !important; color: #c0392b !important; }
+.note-type.callback { background: rgba(243, 156, 18, 0.2) !important; color: #d68910 !important; }
+
+/* 聊天機器人 */
+.chatbot-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.chatbot-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+}
+
+.chatbot-toggle i {
+    color: white;
+    font-size: 24px;
+}
+
+.chatbot-iframe-container {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 550px;
+    height: min(600px, calc(100vh - 120px)); /* 自動適應視窗高度 */
+    max-height: calc(100vh - 120px); /* 確保不超出視窗 */
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    z-index: 999;
+    transform: scale(0.8) translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+}
+
+.chatbot-iframe-container.show {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.chatbot-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 15px 15px 0 0;
+}
+
+.chatbot-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.chatbot-close {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.chatbot-close:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.chatbot-iframe {
+    width: 100%;
+    height: calc(100% - 60px);
+    border: none;
+    border-radius: 0 0 15px 15px;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .chatbot-iframe-container {
+        width: calc(100vw - 20px);
+        height: calc(100vh - 120px); /* 使用統一的高度計算 */
+        max-height: calc(100vh - 120px);
+        bottom: 80px;
+        right: 10px;
+        left: 10px;
+    }
+    
+    .chatbot-toggle {
+        bottom: 10px;
+        right: 10px;
+    }
+    
+    .notes-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats {
+        flex-direction: column;
+    }
+    
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .toolbar-actions {
+        justify-content: center;
+    }
+    
+    .quick-tools {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 智能提示開關 */
+.smart-toggle {
+    position: fixed;
+    bottom: 80px;
+    left: 20px;
+    background: #3498db;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 999;
+}
+
+.smart-toggle.active {
+    background: #27ae60;
+}
+
+/* 智能提示樣式 (從便利貼1補回) */
+.smart-hints {
+    position: relative;
+    background: rgba(255, 255, 255, 0.98);
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding: 8px;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    pointer-events: auto;
+    z-index: 10;
+    margin-top: 8px;
+}
+
+.hint-item {
+    margin: 2px 0;
+    padding: 3px 6px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 3px;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.hint-zodiac {
+    background: rgba(155, 89, 182, 0.1);
+    color: #8e44ad;
+}
+
+.hint-payment {
+    background: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+}
+
+.hint-calc {
+    background: rgba(241, 196, 15, 0.1);
+    color: #f39c12;
+}
+
+/* 通知樣式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #27ae60;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 10000;
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.error {
+    background: #e74c3c;
+}
+
+.notification.warning {
+    background: #f39c12;
+}
+
+/* 快捷鍵說明 */
+.hotkeys-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.hotkeys-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hotkeys-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.hotkeys-content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+.hotkey-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.hotkey-item:last-child {
+    border-bottom: none;
+}
+
+.hotkey-combo {
+    background: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-family: monospace;
+    color: #495057;
+}
+
+/* 當日封存樣式 */
+.archive-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10002;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.archive-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.archive-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.archive-content h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+.archive-notes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.archive-note {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    position: relative;
+}
+
+.archive-note h4 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.archive-note p {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.archive-note-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.archive-note-actions .btn {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+.archive-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #eee;
+}
+
+.tool-hint {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    color: #1565c0;
+}
+
+.tool-result {
+    background: #f3e5f5;
+    border: 1px solid #ce93d8;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+    color: #6a1b9a;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* 快速工具區 */
+.quick-tools {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.tool-card {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.tool-card h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tool-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.tool-card .tool-result {
+    background: #e8f5e9;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    min-height: 30px;
+    margin: 8px 0 0 0;
+}
+
+/* 下拉選單樣式修復 */
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="m0 1 2 2 2-2z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 12px;
+    padding-right: 30px !important;
+}
+
+select.tool-input {
+    width: 100%;
+    padding: 8px 30px 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+    background-color: #fff;
+    font-size: 14px;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+select.tool-input:hover {
+    border-color: #3498db;
+}
+
+select.tool-input:focus {
+    outline: none;
+    border-color: #2980b9;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+select.note-type {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23666" d="m0 1 2 2 2-2z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 10px;
+    padding: 4px 25px 4px 8px !important;
+    border: 1px solid rgba(0,0,0,0.2) !important;
+    border-radius: 4px !important;
+    font-size: 0.85rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin-right: 8px !important;
+    font-weight: normal !important;
+    min-width: 80px !important;
+    max-width: 120px !important;
+    height: auto !important;
+    vertical-align: middle !important;
+    box-shadow: none !important;
+    background-color: #fff !important;
+    color: #2c3e50 !important;
+}
+
+select.note-type:hover {
+    border-color: #2980b9 !important;
+    background-color: #f8f9fa !important;
+}
+
+select.note-type:focus {
+    outline: none !important;
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 1px rgba(52, 152, 219, 0.3) !important;
+}
+
+/* 額外的下拉選單樣式 */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.color-picker {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+}
+
+.color-picker button {
+    width: 25px;
+    height: 25px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.color-picker button:hover {
+    transform: scale(1.1);
+}
+
+/* 便利貼編輯時放大效果 */
+.note.editing {
+    transform: scale(1.3) !important;
+    transform-origin: center center !important; /* 從中心點縮放 */
+    z-index: 999 !important; /* 提高z-index確保在最上層 */
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3) !important; /* 增強陰影效果 */
+    position: relative !important;
+}
+
+.note.editing .note-title,
+.note.editing .note-content {
+    font-size: 1.1em !important;
+    line-height: 1.5 !important;
+}
+
+.note.editing .note-header {
+    padding: 15px !important;
+}
+
+.note.editing .note-content {
+    padding: 15px !important;
+    min-height: 280px !important; /* 拉長一倍：從140px改為280px */
+}
+
+/* 便利貼移動到安全編輯位置 */
+.note.editing.moved-to-safe {
+    position: fixed !important;
+    top: 50% !important;
+    left: 30% !important;
+    transform: translate(-50%, -50%) scale(1.3) !important;
+    z-index: 1001 !important; /* 比聊天機器人更高 */
+    max-width: 450px !important;
+    animation: moveToSafe 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4) !important; /* 更強的陰影突出效果 */
+    border: 2px solid rgba(255, 255, 255, 0.8) !important; /* 白色邊框突出 */
+}
+
+@keyframes moveToSafe {
+    from {
+        transform: scale(1);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+        border: none;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1.3);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        border: 2px solid rgba(255, 255, 255, 0.8);
+    }
+}
+
+
+
+/* JavaScript 載入的樣式 */
+.js-loaded .note {
+    transition: transform 0.3s ease;
+}
+
+.js-loaded .note.editing {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 隱藏原生下拉選單箭頭 */
+select::-ms-expand {
+    display: none;
+}
+
+/* 自訂下拉選單樣式 */
+.custom-select {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.custom-select select {
+    display: none; /* 隱藏原生下拉選單 */
+}
+
+.select-selected {
+    background-color: #ffffff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.select-selected:after {
+    content: "▼";
+    font-size: 12px;
+    color: #666;
+    position: absolute;
+    right: 10px;
+}
+
+.select-items {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    z-index: 99;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.select-items div {
+    padding: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.select-items div:hover {
+    background-color: #f1f1f1;
+}
+
+/* 隱藏原生下拉選單 */
+select {
+    display: none;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- 頂部工具列 -->
+    <div class="toolbar">
+        <h1>
+            <i class="fas fa-sticky-note"></i>
+            智能便利貼系統
+        </h1>        <div class="toolbar-actions">
+            <button class="btn btn-primary" onclick="createNewNote()">
+                <i class="fas fa-plus"></i> 新增便利貼
+            </button>
+            <button class="btn btn-secondary" onclick="exportNotes()">
+                <i class="fas fa-download"></i> 匯出
+            </button>
+            <button class="btn btn-info" onclick="showTodayArchive()">
+                <i class="fas fa-archive"></i> 當日封存
+            </button>
+            <button class="btn btn-success" onclick="showHotkeys()">
+                <i class="fas fa-keyboard"></i> 快捷鍵
+            </button>
+            <button class="btn btn-warning" onclick="testFunctions()">
+                <i class="fas fa-bug"></i> 測試功能
+            </button>
+        </div>
+    </div>
+
+    <!-- 統計區 -->
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="todayCount">0</h3>
+                <p>今日便利貼</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-sticky-note"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalCount">0</h3>
+                <p>總便利貼</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="todoCount">0</h3>
+                <p>待辦事項</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-phone"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="callbackCount">0</h3>
+                <p>回電提醒</p>
+            </div>
+        </div>
+    </div><!-- 快速工具區 -->
+    <div class="quick-tools">
+        <div class="tool-card">
+            <h3><i class="fas fa-dragon"></i> 生肖查詢</h3>
+            <input type="number" id="rocYear" class="tool-input" placeholder="輸入民國年 (如: 113)">
+            <div id="zodiacResult" class="tool-result">—</div>
+        </div>
+        <div class="tool-card">
+            <h3><i class="fas fa-calendar-alt"></i> 繳款截止日</h3>
+            <select id="billingDay" class="tool-input">
+                <option value="">選擇結帳日</option>
+                <option value="2">2日</option>
+                <option value="4">4日</option>
+                <option value="6">6日</option>
+                <option value="8">8日</option>
+                <option value="10">10日</option>
+                <option value="12">12日</option>
+                <option value="14">14日</option>
+                <option value="16">16日</option>
+                <option value="18">18日</option>
+                <option value="20">20日</option>
+                <option value="22">22日</option>
+                <option value="24">24日</option>
+                <option value="26">26日</option>
+            </select>
+            <div id="paymentResult" class="tool-result">—</div>
+        </div>
+        <div class="tool-card">
+            <h3><i class="fas fa-calculator"></i> 快速計算</h3>
+            <input type="text" id="quickCalc" class="tool-input" placeholder="輸入算式 (如: 100+50*2 或 100 50)">
+            <div id="calcResult" class="tool-result">—</div>
+        </div>
+    </div>
+
+    <!-- 便利貼容器 -->
+    <div class="notes-container" id="notesContainer">
+        <!-- 便利貼將在這裡動態生成 -->
+    </div>
+</div>
+
+<!-- 聊天機器人 -->
+<button class="chatbot-toggle" onclick="toggleChatbot()">
+    <i class="fas fa-robot"></i>
+</button>
+
+<!-- 智能提示開關 -->
+<div class="smart-toggle active" id="smartToggle" onclick="toggleSmartHints()">
+    <i class="fas fa-magic"></i>
+    <span>智能提示：開啟</span>
+</div>
+
+<div class="chatbot-iframe-container" id="chatbotContainer">
+    <div class="chatbot-header">
+        <h3>🤖 智能助理</h3>
+        <button class="chatbot-close" onclick="toggleChatbot()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <iframe 
+        class="chatbot-iframe" 
+        src="V10.1__________.html"
+        title="智能助理">
+    </iframe>
+</div>
+
+<!-- 快捷鍵說明 -->
+<div class="hotkeys-overlay" id="hotkeysOverlay">
+    <div class="hotkeys-content">
+        <h2>⌨️ 快捷鍵說明</h2>
+        <div class="hotkey-item">
+            <span>開關助理</span>
+            <span class="hotkey-combo">Ctrl + Q</span>
+        </div>
+        <div class="hotkey-item">
+            <span>新增便利貼</span>
+            <span class="hotkey-combo">Ctrl + A</span>
+        </div>
+        <div class="hotkey-item">
+            <span>刪除最新便利貼</span>
+            <span class="hotkey-combo">Ctrl + S</span>
+        </div>
+        <div class="hotkey-item">
+            <span>顯示當日封存</span>
+            <span class="hotkey-combo">Ctrl + D</span>
+        </div>        <div class="hotkey-item">
+            <span>調整寬度 (450px)</span>
+            <span class="hotkey-combo">Ctrl + 1</span>
+        </div>
+        <div class="hotkey-item">
+            <span>調整寬度 (550px)</span>
+            <span class="hotkey-combo">Ctrl + 2</span>
+        </div>
+        <div class="hotkey-item">
+            <span>調整寬度 (650px)</span>
+            <span class="hotkey-combo">Ctrl + 3</span>
+        </div>
+        <div class="hotkey-item">
+            <span>顯示快捷鍵說明</span>
+            <span class="hotkey-combo">Ctrl + K</span>
+        </div>        <div class="hotkey-item">
+            <span>關閉對話框/退出編輯</span>
+            <span class="hotkey-combo">ESC</span>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="hideHotkeys()">關閉</button>
+        </div>
+    </div>
+</div>
+
+<!-- 當日封存 -->
+<div class="archive-overlay" id="archiveOverlay">
+    <div class="archive-content">
+        <h2>📁 當日封存便利貼</h2>
+        <div class="archive-controls">
+            <span id="archiveCount">封存數量: 0</span>
+            <div>
+                <button class="btn btn-secondary" onclick="clearTodayArchive()" id="clearArchiveBtn">
+                    <i class="fas fa-trash"></i> 清空封存
+                </button>
+                <button class="btn btn-secondary" onclick="hideArchive()">
+                    <i class="fas fa-times"></i> 關閉
+                </button>
+            </div>
+        </div>
+        <div class="archive-notes" id="archiveNotes">
+            <!-- 封存便利貼將在這裡顯示 -->
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== 全域變數 ==========
+let notes = [];
+let todayArchive = [];
+let updateTimer = null;
+let smartHintsEnabled = true;
+
+// ========== 本地儲存函數 ==========
+function saveNotes() {
+    localStorage.setItem('stickyNotes', JSON.stringify(notes));
+}
+
+function loadNotes() {
+    const saved = localStorage.getItem('stickyNotes');
+    if (saved) {
+        notes = JSON.parse(saved);
+    }
+}
+
+function saveTodayArchive() {
+    localStorage.setItem('todayArchive', JSON.stringify(todayArchive));
+}
+
+function loadTodayArchive() {
+    const saved = localStorage.getItem('todayArchive');
+    if (saved) {
+        todayArchive = JSON.parse(saved);
+    }
+}
+
+// ========== 核心功能函數 ==========
+
+// 生成唯一ID
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// 建立新便利貼
+function createNewNote() {
+    console.log('正在建立新便利貼...');
+    try {
+        const noteId = generateId();
+        const newNote = {
+            id: noteId,
+            title: '',
+            content: '',
+            processedContent: '',
+            hints: [],
+            color: 'yellow',
+            type: '',  // 預設為空，讓用戶自己選擇
+            customerName: '',
+            customerPhone: '',
+            callbackTime: '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        notes.unshift(newNote);
+        saveNotes();
+        renderNotes();
+        updateStats();
+        console.log('新便利貼已建立，ID:', noteId);        // 自動聚焦到新便利貼的標題並進入編輯模式
+        setTimeout(() => {
+            const titleInput = document.querySelector(`#note-${noteId} .note-title`);
+            const noteElement = document.getElementById(`note-${noteId}`);
+            if (titleInput && noteElement) {
+                titleInput.focus();
+                
+                // 直接進入編輯模式（使用我們的簡化邏輯）
+                document.querySelectorAll('.note.editing').forEach(note => {
+                    note.classList.remove('editing');
+                    note.classList.remove('moved-to-safe');
+                });
+                
+                noteElement.classList.add('editing');
+                noteElement.classList.add('moved-to-safe');
+                
+                const container = document.getElementById('notesContainer');
+                if (container) {
+                    container.classList.add('has-editing');
+                }
+                
+                console.log('已聚焦到新便利貼標題並進入編輯模式');
+            } else {
+                console.log('找不到新便利貼的標題輸入框');
+            }
+        }, 150);
+    } catch (error) {
+        console.error('建立新便利貼時發生錯誤:', error);
+    }
+}
+
+// 刪除便利貼
+function deleteNote(noteId) {
+    const noteIndex = notes.findIndex(n => n.id === noteId);
+    if (noteIndex !== -1) {
+        const deletedNote = notes.splice(noteIndex, 1)[0];
+        
+        // 自動封存到當日封存
+        todayArchive.push({
+            ...deletedNote,
+            archivedAt: new Date().toISOString()
+        });
+        
+        saveNotes();
+        saveTodayArchive();
+        renderNotes();
+        updateStats();
+        
+        showNotification(`便利貼已刪除並封存`, 'success');
+    }
+}
+
+// 刪除最新便利貼 (快捷鍵用)
+function deleteLatestNote() {
+    console.log('deleteLatestNote被調用，當前便利貼數量:', notes.length);
+    if (notes.length > 0) {
+        const noteToDelete = notes[0];
+        console.log('準備刪除便利貼:', noteToDelete.id);
+        deleteNote(notes[0].id);
+    } else {
+        console.log('沒有便利貼可刪除');
+        showNotification('沒有便利貼可刪除', 'warning');
+    }
+}
+
+// 改變便利貼顏色
+function changeNoteColor(noteId, color) {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+        note.color = color;
+        note.updatedAt = new Date().toISOString();
+        saveNotes();
+        renderNotes();
+    }
+}
+
+// 改變便利貼類型
+function changeNoteType(noteId, type) {
+    console.log('changeNoteType called:', noteId, type);
+    try {
+        const note = notes.find(n => n.id === noteId);
+        if (note) {
+            note.type = type;
+            note.updatedAt = new Date().toISOString();
+            saveNotes();
+            renderNotes();
+            updateStats();
+            console.log('便利貼類型已更改為:', type);
+        } else {
+            console.error('找不到便利貼:', noteId);
+        }
+    } catch (error) {
+        console.error('changeNoteType錯誤:', error);
+    }
+}
+
+// 更新便利貼內容 (增強版)
+function updateNoteContent(noteId, field, value) {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+        note[field] = value;
+        note.updatedAt = new Date().toISOString();
+        
+        // 清除之前的計時器
+        if (updateTimer) {
+            clearTimeout(updateTimer);
+        }
+        
+        // 設置新的計時器，延遲保存和智能提示處理
+        updateTimer = setTimeout(() => {
+            saveNotes();
+            updateStats();
+            
+            // 如果更新的是內容，執行智能提示處理
+            if (field === 'content') {
+                processSmartHints(noteId, value);
+            }
+        }, 800); // 延遲800毫秒，與便利貼1一致
+    }
+}
+
+// 渲染便利貼 (增強版 - 包含智能提示)
+function renderNotes() {
+    const container = document.getElementById('notesContainer');
+    
+    if (notes.length === 0) {
+        container.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #7f8c8d;">
+                <i class="fas fa-sticky-note" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3>還沒有便利貼</h3>
+                <p>點擊上方的「新增便利貼」按鈕開始使用</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = notes.map(note => {
+        // 生成智能提示HTML
+        let hintsHtml = '';
+        if (smartHintsEnabled && note.hints && note.hints.length > 0) {
+            hintsHtml = '<div class="smart-hints">';
+            note.hints.forEach(hint => {
+                hintsHtml += `<span class="hint-item ${hint.type}">${hint.text}</span>`;
+            });
+            hintsHtml += '</div>';
+        }
+        
+        return `
+        <div class="note ${note.color}" id="note-${note.id}">
+            <div class="note-header">
+                <textarea 
+                    class="note-title" 
+                    placeholder="標題..."
+                    oninput="updateNoteContent('${note.id}', 'title', this.value)"
+                >${note.title || ''}</textarea>                <div class="note-actions">
+                    <select class="note-type ${note.type || ''}" onchange="changeNoteType('${note.id}', this.value)">
+                        <option value="" ${!note.type ? 'selected' : ''}>請選擇類型</option>
+                        <option value="note" ${note.type === 'note' ? 'selected' : ''}>📝 一般</option>
+                        <option value="todo" ${note.type === 'todo' ? 'selected' : ''}>✅ 待辦</option>
+                        <option value="callback" ${note.type === 'callback' ? 'selected' : ''}>📞 回電</option>
+                    </select>
+                    <div class="dropdown">
+                        <button class="note-btn" onclick="toggleColorPicker('${note.id}')">
+                            <i class="fas fa-palette"></i>
+                        </button>
+                        <div class="color-picker" id="color-${note.id}" style="display: none;">
+                            <button onclick="changeNoteColor('${note.id}', 'yellow')" style="background: #ffeaa7;"></button>
+                            <button onclick="changeNoteColor('${note.id}', 'pink')" style="background: #fd79a8;"></button>
+                            <button onclick="changeNoteColor('${note.id}', 'blue')" style="background: #74b9ff;"></button>
+                            <button onclick="changeNoteColor('${note.id}', 'green')" style="background: #55efc4;"></button>
+                            <button onclick="changeNoteColor('${note.id}', 'orange')" style="background: #fdcb6e;"></button>
+                            <button onclick="changeNoteColor('${note.id}', 'purple')" style="background: #a29bfe;"></button>
+                        </div>
+                    </div>
+                    <button class="note-btn" onclick="deleteNote('${note.id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <textarea 
+                class="note-content" 
+                placeholder="在這裡輸入內容..."
+                oninput="updateNoteContent('${note.id}', 'content', this.value)"
+            >${note.content || ''}</textarea>
+            
+            ${hintsHtml}
+            
+            <div class="note-footer">
+                <span>${formatDate(note.createdAt)}</span>
+            </div>
+        </div>        `;
+    }).join('');    // 為每個便利貼設置編輯事件監聽器
+    setTimeout(() => {
+        notes.forEach(note => {
+            setupNoteEventListeners(note.id);
+        });
+    }, 50);
+}
+
+// 更新統計
+function updateStats() {
+    const today = new Date().toDateString();
+    const todayNotes = notes.filter(n => new Date(n.createdAt).toDateString() === today);
+    const todoNotes = notes.filter(n => n.type === 'todo');
+    const callbackNotes = notes.filter(n => n.type === 'callback');
+    
+    document.getElementById('todayCount').textContent = todayNotes.length;
+    document.getElementById('totalCount').textContent = notes.length;
+    document.getElementById('todoCount').textContent = todoNotes.length;
+    document.getElementById('callbackCount').textContent = callbackNotes.length;
+}
+
+// 格式化日期
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-TW', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// ========== 智能提示功能 (從便利貼1補回) ==========
+
+// 增強版計算器 - 支援空格代替加號
+function enhancedCalculate(expression) {
+    try {
+        // 先處理空格代替加號的情況
+        // 將連續的數字和空格模式替換為加號
+        let processed = expression.replace(/(\d+)\s+(\d+)/g, '$1+$2');
+        
+        // 重複處理直到沒有更多的空格模式
+        while (/(\d+)\s+(\d+)/.test(processed)) {
+            processed = processed.replace(/(\d+)\s+(\d+)/g, '$1+$2');
+        }
+        
+        // 檢查是否為有效的數學表達式
+        if (!/^[\d\+\-\*\/\(\)\.\s]+$/.test(processed)) {
+            return null;
+        }
+        
+        // 使用 Function 構造器計算（更安全）
+        const result = Function('"use strict"; return (' + processed + ')')();
+        
+        return {
+            expression: processed,
+            result: result
+        };
+    } catch (e) {
+        return null;
+    }
+}
+
+// 計算生肖
+function calculateZodiacFromROC(rocYear) {
+    const adYear = rocYear + 1911;
+    const currentYear = new Date().getFullYear();
+    const zodiacAnimals = ['鼠', '牛', '虎', '兔', '龍', '蛇', '馬', '羊', '猴', '雞', '狗', '豬'];
+    const zodiac = zodiacAnimals[(adYear - 1900) % 12];
+    const age = currentYear - adYear;
+    
+    return {
+        animal: zodiac,
+        age: age
+    };
+}
+
+// 計算繳款日期（指定月份）
+function calculatePaymentDateWithMonth(month, billingDay) {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    
+    // 如果指定的月份已過，則使用明年
+    let year = currentYear;
+    if (month < currentMonth) {
+        year = currentYear + 1;
+    }
+    
+    const billingDate = new Date(year, month - 1, billingDay);
+    const paymentDate = new Date(billingDate);
+    paymentDate.setDate(paymentDate.getDate() + 16);
+    
+    return {
+        billingDate: `${billingDate.getMonth() + 1}/${billingDate.getDate()}`,
+        paymentDate: `${paymentDate.getMonth() + 1}/${paymentDate.getDate()}`
+    };
+}
+
+// 計算繳款日期（當月）
+function calculatePaymentDateCurrentMonth(billingDay) {
+    const today = new Date();
+    let billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+    
+    if (billingDate < today) {
+        billingDate.setMonth(billingDate.getMonth() + 1);
+    }
+    
+    const paymentDate = new Date(billingDate);
+    paymentDate.setDate(paymentDate.getDate() + 16);
+    
+    return {
+        billingDate: `${billingDate.getMonth() + 1}/${billingDate.getDate()}`,
+        paymentDate: `${paymentDate.getMonth() + 1}/${paymentDate.getDate()}`
+    };
+}
+
+// 快速生肖查詢
+function quickZodiac() {
+    const rocYear = parseInt(document.getElementById('rocYear').value);
+    if (!rocYear || rocYear < 1) {
+        document.getElementById('zodiacResult').textContent = '—';
+        return;
+    }
+    
+    const result = calculateZodiacFromROC(rocYear);
+    document.getElementById('zodiacResult').innerHTML = 
+        `${result.animal}年生，約${result.age}歲`;
+}
+
+// 快速繳款日計算
+function quickPayment() {
+    const billingDay = parseInt(document.getElementById('billingDay').value);
+    if (!billingDay) {
+        document.getElementById('paymentResult').textContent = '—';
+        return;
+    }
+    
+    const paymentInfo = calculatePaymentDateCurrentMonth(billingDay);
+    const today = new Date();
+    let billingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
+    if (billingDate < today) {
+        billingDate.setMonth(billingDate.getMonth() + 1);
+    }
+    
+    const payDate = new Date(billingDate);
+    payDate.setDate(payDate.getDate() + 16);
+    
+    document.getElementById('paymentResult').textContent = 
+        `繳款截止：${payDate.toLocaleDateString('zh-TW')}`;
+}
+
+// 快速計算
+function quickCalculate(event) {
+    if (event.key === 'Enter') {
+        const expression = document.getElementById('quickCalc').value;
+        const result = enhancedCalculate(expression);
+        
+        if (result) {
+            document.getElementById('calcResult').textContent = `= ${result.result}`;
+        } else {
+            document.getElementById('calcResult').textContent = '輸入錯誤';
+        }
+    }
+}
+
+// 智能提示處理 (簡化版)
+function processSmartHints(noteId, content) {
+    if (!smartHintsEnabled) return;
+    
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    // 清除舊的提示並設置處理後的內容
+    note.hints = [];
+    note.processedContent = content;
+    
+    // 1. 生肖查詢 - 匹配 "XX年生" 或 "民國XX年"
+    const zodiacPattern = /(\d{1,3})\s*年\s*生?/g;
+    let match;
+    while ((match = zodiacPattern.exec(content)) !== null) {
+        const rocYear = parseInt(match[1]);
+        if (rocYear >= 1 && rocYear <= 150) {
+            const zodiac = calculateZodiacFromROC(rocYear);
+            note.hints.push({
+                type: 'hint-zodiac',
+                text: `${rocYear}年 → ${zodiac.animal}年生 (${zodiac.age}歲)`
+            });
+        }
+    }
+    
+    // 2. 繳款日計算 - 支援完整日期格式
+    const fullDatePattern = /(\d{1,2})[\/月](\d{1,2})[日號]?\s*結帳/g;
+    while ((match = fullDatePattern.exec(content)) !== null) {
+        const month = parseInt(match[1]);
+        const day = parseInt(match[2]);
+        
+        if (day >= 2 && day <= 26 && day % 2 === 0) {
+            const paymentInfo = calculatePaymentDateWithMonth(month, day);
+            note.hints.push({
+                type: 'hint-payment',
+                text: `${month}/${day}結帳 → ${paymentInfo.paymentDate}繳款`
+            });
+        }
+    }
+    
+    // 單獨日期格式
+    const dayOnlyPattern = /(?<![\d\/月])(\d{1,2})[日號]\s*結帳/g;
+    while ((match = dayOnlyPattern.exec(content)) !== null) {
+        const day = parseInt(match[1]);
+        
+        if (day >= 2 && day <= 26 && day % 2 === 0) {
+            const paymentInfo = calculatePaymentDateCurrentMonth(day);
+            note.hints.push({
+                type: 'hint-payment',
+                text: `${day}日結帳 → ${paymentInfo.paymentDate}繳款`
+            });
+        }
+    }
+    
+    // 3. 數學計算 - 支援空格和括號
+    const calcPattern = /([\d\.\+\-\*\/\(\)\s]+)=/g;
+    while ((match = calcPattern.exec(content)) !== null) {
+        const expression = match[1].trim();
+        const calcResult = enhancedCalculate(expression);
+        if (calcResult) {
+            note.hints.push({
+                type: 'hint-calc',
+                text: `${calcResult.expression} = ${calcResult.result}`
+            });
+        }
+    }
+    
+    // 更新便利貼顯示
+    updateNoteHints(noteId);
+}
+
+// 更新便利貼的智能提示顯示
+function updateNoteHints(noteId) {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    
+    const noteElement = document.getElementById(`note-${noteId}`);
+    if (!noteElement) return;
+    
+    let hintsElement = noteElement.querySelector('.smart-hints');
+    
+    if (!note.hints || note.hints.length === 0) {
+        if (hintsElement) {
+            hintsElement.remove();
+        }
+        return;
+    }
+    
+    if (!hintsElement) {
+        hintsElement = document.createElement('div');
+        hintsElement.className = 'smart-hints';
+        const footer = noteElement.querySelector('.note-footer');
+        noteElement.insertBefore(hintsElement, footer);
+    }
+    
+    const hintsHtml = note.hints.map(hint => {
+        return `<span class="hint-item ${hint.type}">${hint.text}</span>`;
+    }).join('');
+    
+    hintsElement.innerHTML = hintsHtml;
+}
+
+// 切換智能提示
+function toggleSmartHints() {
+    smartHintsEnabled = !smartHintsEnabled;
+    const toggle = document.getElementById('smartToggle');
+    
+    if (smartHintsEnabled) {
+        toggle.classList.add('active');
+        toggle.innerHTML = '<i class="fas fa-magic"></i><span>智能提示：開啟</span>';
+    } else {
+        toggle.classList.remove('active');
+        toggle.innerHTML = '<i class="fas fa-magic"></i><span>智能提示：關閉</span>';    }
+    
+    renderNotes();
+}
+
+// 檢查便利貼是否會被聊天機器人遮擋
+function checkIfBlockedByChatbot(noteElement) {
+    const chatbotContainer = document.getElementById('chatbotContainer');
+    
+    // 如果聊天機器人沒有顯示，不需要移動
+    if (!chatbotContainer || !chatbotContainer.classList.contains('show')) {
+        return false;
+    }
+    
+    // 獲取便利貼的位置信息
+    const noteRect = noteElement.getBoundingClientRect();
+    const chatbotRect = chatbotContainer.getBoundingClientRect();
+    
+    // 計算放大後的便利貼邊界（放大1.3倍）
+    const scaledWidth = noteRect.width * 1.3;
+    const scaledHeight = noteRect.height * 1.3;
+    const scaledLeft = noteRect.left - (scaledWidth - noteRect.width) / 2;
+    const scaledRight = noteRect.right + (scaledWidth - noteRect.width) / 2;
+    const scaledTop = noteRect.top - (scaledHeight - noteRect.height) / 2;
+    const scaledBottom = noteRect.bottom + (scaledHeight - noteRect.height) / 2;
+    
+    // 檢查是否有重疊
+    const isOverlapping = !(
+        scaledRight < chatbotRect.left || 
+        scaledLeft > chatbotRect.right || 
+        scaledBottom < chatbotRect.top || 
+        scaledTop > chatbotRect.bottom
+    );
+    
+    console.log('便利貼位置檢查:', {
+        noteRect: { left: scaledLeft, right: scaledRight, top: scaledTop, bottom: scaledBottom },
+        chatbotRect: { left: chatbotRect.left, right: chatbotRect.right, top: chatbotRect.top, bottom: chatbotRect.bottom },
+        isOverlapping
+    });
+    
+    return isOverlapping;
+}
+
+// 設置便利貼的事件監聽器 - 最簡化版本
+function setupNoteEventListeners(noteId) {
+    const noteElement = document.getElementById(`note-${noteId}`);
+    if (!noteElement) {
+        console.warn(`找不到便利貼元素: note-${noteId}`);
+        return;
+    }
+    
+    // 防止重複綁定
+    if (noteElement.dataset.eventsSetup === 'true') {
+        return;
+    }
+    
+    const titleInput = noteElement.querySelector('.note-title');
+    const contentInput = noteElement.querySelector('.note-content');
+    
+    // 使用單一事件處理器，避免重複觸發
+    function handleClick(e) {
+        e.stopPropagation();
+        
+        // 檢查是否已經在編輯模式
+        if (noteElement.classList.contains('editing')) {
+            return;
+        }
+        
+        // 進入編輯模式
+        console.log(`便利貼 ${noteId} 進入編輯模式`);
+        
+        // 先退出其他所有編輯模式
+        document.querySelectorAll('.note.editing').forEach(note => {
+            note.classList.remove('editing');
+            note.classList.remove('moved-to-safe');
+        });
+        
+        // 設置當前便利貼為編輯狀態
+        noteElement.classList.add('editing');
+        noteElement.classList.add('moved-to-safe');
+        
+        // 設置容器狀態
+        const container = document.getElementById('notesContainer');
+        if (container) {
+            container.classList.add('has-editing');
+        }
+    }
+    
+    // 只綁定 click 事件，避免多重觸發
+    if (titleInput) {
+        titleInput.addEventListener('click', handleClick, { once: false });
+    }
+    
+    if (contentInput) {
+        contentInput.addEventListener('click', handleClick, { once: false });
+    }
+    
+    // 標記已設置事件
+    noteElement.dataset.eventsSetup = 'true';
+    console.log(`便利貼 ${noteId} 事件監聽器設置完成`);
+}
+
+// 點擊空白區域退出編輯模式 - 最簡化版本
+document.addEventListener('click', function(e) {
+    // 檢查點擊目標
+    const isNoteContent = e.target.closest('.note-title') || e.target.closest('.note-content');
+    const isNoteArea = e.target.closest('.note');
+    const isControlArea = e.target.closest('.controls') || 
+                         e.target.closest('.hotkeys-dialog') || 
+                         e.target.closest('.archive-dialog') ||
+                         e.target.closest('#chatbotContainer');
+    
+    // 如果不是點擊便利貼內容，且不是控制區域，則退出編輯
+    if (!isNoteContent && !isControlArea) {
+        const editingNotes = document.querySelectorAll('.note.editing');
+        if (editingNotes.length > 0) {
+            console.log('點擊空白區域，退出所有編輯模式');
+            editingNotes.forEach(note => {
+                note.classList.remove('editing');
+                note.classList.remove('moved-to-safe');
+            });
+            
+            // 移除容器的編輯狀態
+            const container = document.getElementById('notesContainer');
+            if (container) {
+                container.classList.remove('has-editing');
+            }
+        }
+    }
+});
+
+// ========== 更新便利貼內容函數 (修改版) ==========
+function toggleChatbot() {
+    const container = document.getElementById('chatbotContainer');
+    container.classList.toggle('show');
+    
+    // 顯示時調整高度
+    if (container.classList.contains('show')) {
+        setTimeout(() => {
+            adjustChatbotHeight();
+        }, 100); // 等待動畫完成後調整
+    }
+    
+    console.log('聊天機器人顯示狀態切換');
+}
+
+// ========== 通知系統 ==========
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.classList.add('show'), 100);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => document.body.removeChild(notification), 300);
+    }, 3000);
+}
+
+// ========== 快捷鍵功能 ==========
+function showHotkeys() {
+    document.getElementById('hotkeysOverlay').classList.add('show');
+}
+
+function hideHotkeys() {
+    document.getElementById('hotkeysOverlay').classList.remove('show');
+}
+
+// ========== 當日封存功能 ==========
+function showTodayArchive() {
+    console.log('showTodayArchive被調用，當前封存數量:', todayArchive.length);
+    renderArchive();
+    const overlay = document.getElementById('archiveOverlay');
+    if (overlay) {
+        overlay.classList.add('show');
+        console.log('封存視窗已顯示');
+    } else {
+        console.error('找不到archiveOverlay元素');
+    }
+}
+
+function hideArchive() {
+    document.getElementById('archiveOverlay').classList.remove('show');
+}
+
+function renderArchive() {
+    const archiveNotes = document.getElementById('archiveNotes');
+    const archiveCount = document.getElementById('archiveCount');
+    const clearBtn = document.getElementById('clearArchiveBtn');
+    
+    archiveCount.textContent = `封存數量: ${todayArchive.length}`;
+    clearBtn.style.display = todayArchive.length > 0 ? 'inline-flex' : 'none';
+    
+    if (todayArchive.length === 0) {
+        archiveNotes.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #7f8c8d;">
+                <i class="fas fa-archive" style="font-size: 3rem; margin-bottom: 20px;"></i>
+                <h3>當日封存為空</h3>
+                <p>刪除的便利貼會自動保存在這裡</p>
+            </div>
+        `;
+        return;
+    }
+    
+    archiveNotes.innerHTML = todayArchive.map(note => `
+        <div class="archive-note">
+            <h4>${note.title || '無標題'}</h4>
+            <p>${note.content || '無內容'}</p>
+            <small>封存時間: ${formatDate(note.archivedAt)}</small>
+            <div class="archive-note-actions">
+                <button class="btn btn-success" onclick="restoreNote('${note.id}')">
+                    <i class="fas fa-undo"></i> 恢復
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function restoreNote(noteId) {
+    const archiveIndex = todayArchive.findIndex(n => n.id === noteId);
+    if (archiveIndex !== -1) {
+        const restoredNote = todayArchive.splice(archiveIndex, 1)[0];
+        delete restoredNote.archivedAt;
+        
+        notes.unshift(restoredNote);
+        saveNotes();
+        saveTodayArchive();
+        renderNotes();
+        renderArchive();
+        updateStats();
+        
+        showNotification('便利貼已恢復', 'success');
+    }
+}
+
+function clearTodayArchive() {
+    if (confirm('確定要清空所有當日封存嗎？此操作無法撤銷。')) {
+        todayArchive = [];
+        saveTodayArchive();
+        renderArchive();
+        showNotification('當日封存已清空', 'success');
+    }
+}
+
+// ========== 其他功能 ==========
+function exportNotes() {
+    const dataStr = JSON.stringify(notes, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `便利貼備份_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    
+    showNotification('便利貼已匯出', 'success');
+}
+
+function toggleColorPicker(noteId) {
+    const picker = document.getElementById(`color-${noteId}`);
+    picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+
+// 調整聊天視窗寬度
+function adjustChatbotWidth(size) {
+    const container = document.getElementById('chatbotContainer');
+    const widths = { small: '450px', medium: '550px', large: '650px' };
+    
+    if (widths[size]) {
+        container.style.width = widths[size];
+        showNotification(`聊天視窗寬度已調整為${size}`, 'success');
+    }
+}
+
+// 動態調整聊天機器人高度
+function adjustChatbotHeight() {
+    const chatbotContainer = document.getElementById('chatbotContainer');
+    if (chatbotContainer) {
+        const windowHeight = window.innerHeight;
+        const bottomSpace = 120; // 底部預留空間
+        const maxHeight = windowHeight - bottomSpace;
+        
+        // 設置最大高度，確保不超出視窗
+        chatbotContainer.style.maxHeight = `${maxHeight}px`;
+        
+        // 如果當前高度超過可用空間，則調整
+        const currentHeight = Math.min(600, maxHeight);
+        chatbotContainer.style.height = `${currentHeight}px`;
+        
+        console.log(`聊天機器人高度調整為: ${currentHeight}px (視窗高度: ${windowHeight}px)`);
+    }
+}
+
+// 監聽視窗大小變化和縮放
+window.addEventListener('resize', adjustChatbotHeight);
+window.addEventListener('orientationchange', adjustChatbotHeight);
+
+// 使用 ResizeObserver 監聽更精確的變化
+if (window.ResizeObserver) {
+    const resizeObserver = new ResizeObserver(() => {
+        adjustChatbotHeight();
+    });
+    
+    // 監聽 document.documentElement 的變化
+    resizeObserver.observe(document.documentElement);
+}
+
+// 測試函數
+function testFunctions() {
+    console.log('=== 函數測試開始 ===');
+    
+    // 測試基本變數
+    console.log('notes數組:', notes);
+    console.log('smartHintsEnabled:', smartHintsEnabled);
+    
+    // 測試函數存在性
+    const functionsToTest = [
+        'createNewNote', 'deleteNote', 'changeNoteType', 'toggleChatbot', 
+        'showHotkeys', 'hideHotkeys', 'showTodayArchive', 'hideArchive',
+        'deleteLatestNote', 'adjustChatbotWidth'
+    ];
+    
+    functionsToTest.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+            console.log(`✓ ${funcName} 函數存在`);
+        } else {
+            console.error(`✗ ${funcName} 函數不存在`);
+        }
+    });
+    
+    // 測試DOM元素
+    const elementsToTest = [
+        'rocYear', 'billingDay', 'quickCalc', 'smartToggle'
+    ];
+    
+    elementsToTest.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            console.log(`✓ ${elementId} 元素存在`);
+        } else {
+            console.error(`✗ ${elementId} 元素不存在`);
+        }
+    });
+      // 測試快捷鍵模擬
+    console.log('=== 快捷鍵模擬測試 ===');
+    try {
+        console.log('測試createNewNote...');
+        if (typeof window.createNewNote === 'function') {
+            console.log('✓ createNewNote可以調用');
+        } else {
+            console.error('✗ createNewNote無法調用');
+        }
+        
+        console.log('測試deleteLatestNote...');
+        if (typeof window.deleteLatestNote === 'function') {
+            console.log('✓ deleteLatestNote可以調用');
+        } else {
+            console.error('✗ deleteLatestNote無法調用');
+        }
+        
+        console.log('測試showTodayArchive...');
+        if (typeof window.showTodayArchive === 'function') {
+            console.log('✓ showTodayArchive可以調用');
+        } else {
+            console.error('✗ showTodayArchive無法調用');
+        }
+        
+        console.log('測試toggleChatbot...');
+        if (typeof window.toggleChatbot === 'function') {
+            console.log('✓ toggleChatbot可以調用');
+        } else {
+            console.error('✗ toggleChatbot無法調用');
+        }
+        
+        console.log('測試adjustChatbotWidth...');
+        if (typeof window.adjustChatbotWidth === 'function') {
+            console.log('✓ adjustChatbotWidth可以調用');
+        } else {
+            console.error('✗ adjustChatbotWidth無法調用');
+        }
+    } catch (error) {
+        console.error('快捷鍵測試錯誤:', error);
+    }    console.log('=== 函數測試結束 ===');
+    
+    // 特別測試S和D鍵的函數
+    console.log('=== S鍵和D鍵特別測試 ===');
+    console.log('Ctrl+S對應函數 deleteLatestNote:', typeof window.deleteLatestNote);
+    console.log('Ctrl+D對應函數 showTodayArchive:', typeof window.showTodayArchive);
+    console.log('當前便利貼數量:', notes ? notes.length : 0);
+    console.log('當日封存數量:', todayArchive ? todayArchive.length : 0);
+    
+    alert('測試完成，請查看控制台(F12)\n\n重點檢查:\n✓ 所有函數是否存在\n✓ S鍵(deleteLatestNote)和D鍵(showTodayArchive)狀態\n\n快捷鍵列表:\nCtrl+Q: 切換聊天機器人\nCtrl+A: 新增便利貼\nCtrl+S: 刪除最新便利貼\nCtrl+D: 顯示當日封存\nCtrl+K: 顯示快捷鍵說明\nCtrl+1/2/3: 調整聊天視窗大小(450px/550px/650px)\nESC: 退出編輯模式/關閉對話框');
+}
+
+// ========== 事件監聽 ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // 基本初始化
+    loadNotes();
+    loadTodayArchive();
+    renderNotes();
+    updateStats();
+    
+    // 快速工具事件監聽器 (使用安全檢查)
+    const rocYearEl = document.getElementById('rocYear');
+    const billingDayEl = document.getElementById('billingDay');
+    const quickCalcEl = document.getElementById('quickCalc');
+    
+    if (rocYearEl) rocYearEl.addEventListener('keyup', quickZodiac);
+    if (billingDayEl) billingDayEl.addEventListener('change', quickPayment);    if (quickCalcEl) quickCalcEl.addEventListener('keyup', quickCalculate);
+    
+    // 全域函數暴露 (在DOM加載後)
+    window.createNewNote = createNewNote;
+    window.deleteNote = deleteNote;
+    window.deleteLatestNote = deleteLatestNote;
+    window.changeNoteColor = changeNoteColor;
+    window.changeNoteType = changeNoteType;
+    window.updateNoteContent = updateNoteContent;
+    window.toggleColorPicker = toggleColorPicker;
+    window.toggleChatbot = toggleChatbot;
+    window.adjustChatbotWidth = adjustChatbotWidth;
+    window.toggleSmartHints = toggleSmartHints;
+    window.showHotkeys = showHotkeys;
+    window.hideHotkeys = hideHotkeys;
+    window.showTodayArchive = showTodayArchive;
+       window.hideArchive = hideArchive;
+    window.restoreNote = restoreNote;
+    window.clearTodayArchive = clearTodayArchive;
+    window.exportNotes = exportNotes;    window.quickZodiac = quickZodiac;
+    window.quickPayment = quickPayment;
+    window.quickCalculate = quickCalculate;    window.testFunctions = testFunctions;
+      // 編輯相關函數
+    window.setupNoteEventListeners = setupNoteEventListeners;
+    window.checkIfBlockedByChatbot = checkIfBlockedByChatbot;
+    
+    // 聊天機器人相關函數
+    window.adjustChatbotHeight = adjustChatbotHeight;
+    
+    console.log('便利貼系統已初始化');
+    console.log('可用函數:', Object.keys(window).filter(key => typeof window[key] === 'function' && key.includes('Note')));
+    
+    // 檢查全域函數綁定狀態
+    console.log('=== 快捷鍵函數檢查 ===');
+    console.log('createNewNote:', typeof window.createNewNote);
+    console.log('deleteLatestNote:', typeof window.deleteLatestNote);
+    console.log('toggleChatbot:', typeof window.toggleChatbot);
+    console.log('showTodayArchive:', typeof window.showTodayArchive);
+    console.log('adjustChatbotWidth:', typeof window.adjustChatbotWidth);
+    console.log('showHotkeys:', typeof window.showHotkeys);
+    console.log('hideHotkeys:', typeof window.hideHotkeys);
+    console.log('hideArchive:', typeof window.hideArchive);
+    
+    // 初始化聊天機器人高度
+    adjustChatbotHeight();
+    
+    // 測試快捷鍵監聽是否正常
+    console.log('快捷鍵監聽已啟動，請按 Ctrl+K 測試');
+});
+
+// 快捷鍵監聽 - 使用單一監聽器，避免重複綁定
+let keydownHandler = function(e) {
+    // ESC鍵有特殊處理，不受輸入欄位限制
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        try {            console.log('ESC鍵觸發');
+            
+            // 退出便利貼編輯模式
+            const editingNotes = document.querySelectorAll('.note.editing');
+            if (editingNotes.length > 0) {
+                console.log('退出便利貼編輯模式');
+                editingNotes.forEach(note => {
+                    note.classList.remove('editing');
+                    note.classList.remove('moved-to-safe');
+                });
+                
+                // 移除容器的編輯狀態
+                const container = document.getElementById('notesContainer');
+                if (container) {
+                    container.classList.remove('has-editing');
+                }
+                
+                return; // 如果有編輯中的便利貼，只處理退出編輯，不執行其他ESC功能
+            }
+            
+            // 原有的ESC功能
+            if (typeof window.hideHotkeys === 'function') window.hideHotkeys();
+            if (typeof window.hideArchive === 'function') window.hideArchive();
+        } catch (error) {
+            console.error('ESC鍵執行錯誤:', error);
+        }
+        return;
+    }
+    
+    // 如果焦點在輸入欄位內，不觸發其他快捷鍵
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+        return;
+    }
+      // 防止瀏覽器預設行為干擾 - 特別處理Ctrl+S的另存為
+    if (e.ctrlKey && ['q', 'a', 's', 'd', '1', '2', '3', 'k'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // 阻止其他監聽器
+    }
+    
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    console.log('按鍵事件:', e.key, 'Ctrl:', e.ctrlKey, 'Target:', e.target.tagName);
+    
+    if (e.ctrlKey) {
+        console.log('快捷鍵觸發:', e.key);
+        let executed = false;
+        
+        try {
+            switch(e.key.toLowerCase()) {
+                case 'q':
+                    console.log('執行toggleChatbot');
+                    if (typeof window.toggleChatbot === 'function') {
+                        window.toggleChatbot();
+                        executed = true;
+                    } else {
+                        console.error('toggleChatbot函數不存在');
+                    }
+                    break;
+                case 'a':
+                    console.log('執行createNewNote');
+                    if (typeof window.createNewNote === 'function') {
+                        window.createNewNote();
+                        executed = true;
+                    } else {
+                        console.error('createNewNote函數不存在');
+                    }
+                    break;
+                case 's':
+                    console.log('執行deleteLatestNote');
+                    if (typeof window.deleteLatestNote === 'function') {
+                        window.deleteLatestNote();
+                        executed = true;
+                    } else {
+                        console.error('deleteLatestNote函數不存在');
+                    }
+                    break;
+                case 'd':
+                    console.log('執行showTodayArchive');
+                    if (typeof window.showTodayArchive === 'function') {
+                        window.showTodayArchive();
+                        executed = true;
+                    } else {
+                        console.error('showTodayArchive函數不存在');
+                    }
+                    break;
+                case '1':
+                    console.log('執行adjustChatbotWidth small');
+                    if (typeof window.adjustChatbotWidth === 'function') {
+                        window.adjustChatbotWidth('small');
+                        executed = true;
+                    } else {
+                        console.error('adjustChatbotWidth函數不存在');
+                    }
+                    break;
+                case '2':
+                    console.log('執行adjustChatbotWidth medium');
+                    if (typeof window.adjustChatbotWidth === 'function') {
+                        window.adjustChatbotWidth('medium');
+                        executed = true;
+                    } else {
+                        console.error('adjustChatbotWidth函數不存在');
+                    }
+                    break;
+                case '3':
+                    console.log('執行adjustChatbotWidth large');
+                    if (typeof window.adjustChatbotWidth === 'function') {
+                        window.adjustChatbotWidth('large');
+                        executed = true;
+                    } else {
+                        console.error('adjustChatbotWidth函數不存在');
+                    }
+                    break;
+                case 'k':
+                    console.log('執行showHotkeys');
+                    if (typeof window.showHotkeys === 'function') {
+                        window.showHotkeys();
+                        executed = true;
+                    } else {
+                        console.error('showHotkeys函數不存在');
+                    }
+                    break;
+            }
+            
+            if (executed) {
+                console.log('✓ 快捷鍵執行成功:', e.key);
+            }        } catch (error) {
+            console.error('快捷鍵執行錯誤:', error);
+        }
+    }
+};
+
+// 移除舊的監聽器並添加新的 - 使用捕獲階段確保優先執行
+document.removeEventListener('keydown', keydownHandler, true);
+document.removeEventListener('keydown', keydownHandler, false);
+document.addEventListener('keydown', keydownHandler, true); // 使用捕獲階段
+
+// 點擊外部關閉顏色選擇器
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.color-picker').forEach(picker => {
+            picker.style.display = 'none';
+        });
+    }
+});
+</script>
+
+</body>
+</html>
