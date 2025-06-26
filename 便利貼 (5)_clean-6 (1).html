@@ -762,6 +762,17 @@ body {
     border-color: #74b9ff;
 }
 
+.reminder-item.paused {
+    background: #f5f5f5;
+    border-color: #bdc3c7;
+    opacity: 0.8;
+}
+
+.reminder-item.paused .reminder-title,
+.reminder-item.paused .reminder-subject {
+    color: #7f8c8d;
+}
+
 .reminder-info {
     flex: 1;
     margin-right: 8px;
@@ -799,7 +810,9 @@ body {
 }
 
 .btn-complete,
-.btn-snooze {
+.btn-snooze,
+.btn-pause,
+.btn-resume {
     background: #00b894;
     color: white;
     border: none;
@@ -814,6 +827,14 @@ body {
     background: #74b9ff;
 }
 
+.btn-pause {
+    background: #fdcb6e;
+}
+
+.btn-resume {
+    background: #00b894;
+}
+
 .btn-complete:hover {
     background: #00a085;
     transform: scale(1.05);
@@ -821,6 +842,16 @@ body {
 
 .btn-snooze:hover {
     background: #0984e3;
+    transform: scale(1.05);
+}
+
+.btn-pause:hover {
+    background: #e17055;
+    transform: scale(1.05);
+}
+
+.btn-resume:hover {
+    background: #00a085;
     transform: scale(1.05);
 }
 
@@ -2114,7 +2145,10 @@ function createNewNote() {
             callbackDateTime: '',   // 回電時間
             callbackSubject: '',    // 處理事項
             callbackCompleted: false, // 完成狀態
-            reminderActive: false,  // 提醒啟用狀態            // 個案爭取專屬字段
+            reminderActive: false,  // 提醒啟用狀態
+            paused: false,          // 暫停提醒狀態
+            pauseTime: null,        // 暫停時間
+            pauseDuration: null,    // 暫停持續時間(分鐘)// 個案爭取專屬字段
             caseSys: '',           // 客戶SYS
             caseProject: '',       // 爭取項目
             caseReason: '',        // 爭取原因
@@ -2584,7 +2618,8 @@ function checkUpcomingCallbacks() {
         note.type === 'callback' && 
         note.reminderActive && 
         note.callbackDateTime && 
-        !note.callbackCompleted
+        !note.callbackCompleted &&
+        !note.paused  // 跳過已暫停的提醒
     ).filter(note => {
         const callbackTime = new Date(note.callbackDateTime);
         return callbackTime > now && callbackTime <= fiveMinutesLater;
@@ -2727,6 +2762,7 @@ function playNotificationSound(type) {
 }
 
 // 顯示活躍的回電提醒
+// 顯示活躍的回電提醒
 function displayActiveReminders() {
     const activeCallbacks = notes.filter(note => 
         note.type === 'callback' && 
@@ -2742,7 +2778,7 @@ function displayActiveReminders() {
     }
     
     if (activeCallbacks.length > 0) {
-        // 按時間排序，逾期的排在前面
+        // 按時間排序，逾期的排在前面，暫停的排在後面
         const now = new Date();
         activeCallbacks.sort((a, b) => {
             const timeA = new Date(a.callbackDateTime);
@@ -2750,7 +2786,11 @@ function displayActiveReminders() {
             const isOverdueA = timeA < now;
             const isOverdueB = timeB < now;
             
-            // 逾期的排在前面
+            // 暫停的排在最後
+            if (a.paused && !b.paused) return 1;
+            if (!a.paused && b.paused) return -1;
+            
+            // 逾期的排在前面（非暫停狀態下）
             if (isOverdueA && !isOverdueB) return -1;
             if (!isOverdueA && isOverdueB) return 1;
             
@@ -2762,8 +2802,9 @@ function displayActiveReminders() {
         reminderContainer.id = 'callback-reminders';
         reminderContainer.className = 'reminder-container';
         
-        const overdueCount = activeCallbacks.filter(note => new Date(note.callbackDateTime) < now).length;
-        const upcomingCount = activeCallbacks.length - overdueCount;
+        const overdueCount = activeCallbacks.filter(note => new Date(note.callbackDateTime) < now && !note.paused).length;
+        const upcomingCount = activeCallbacks.filter(note => new Date(note.callbackDateTime) >= now && !note.paused).length;
+        const pausedCount = activeCallbacks.filter(note => note.paused).length;
         
         let statusText = '';
         if (overdueCount > 0) {
@@ -2773,7 +2814,11 @@ function displayActiveReminders() {
             if (statusText) statusText += '，';
             statusText += `${upcomingCount}個待回電`;
         }
-        
+        if (pausedCount > 0) {
+            if (statusText) statusText += '，';
+            statusText += `${pausedCount}個已暫停`;
+        }
+
         let reminderHtml = `
             <div class="reminder-header">
                 <h3>
@@ -2795,6 +2840,7 @@ function displayActiveReminders() {
             const callbackTime = new Date(note.callbackDateTime);
             const now = new Date();
             const isOverdue = callbackTime < now;
+            const isPaused = note.paused;
             const timeString = callbackTime.toLocaleDateString('zh-TW', {
                 month: 'short',
                 day: 'numeric',
@@ -2808,7 +2854,9 @@ function displayActiveReminders() {
             const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
             
             let timeDiffText = '';
-            if (isOverdue) {
+            if (isPaused) {
+                timeDiffText = '⏸️ 已暫停';
+            } else if (isOverdue) {
                 if (hours > 0) {
                     timeDiffText = `已逾期 ${hours}小時${minutes}分鐘`;
                 } else {
@@ -2822,28 +2870,38 @@ function displayActiveReminders() {
                 }
             }
             
+            const itemClass = isPaused ? 'paused' : (isOverdue ? 'overdue' : 'upcoming');
+            
             reminderHtml += `
-                <div class="reminder-item ${isOverdue ? 'overdue' : 'upcoming'}">
+                <div class="reminder-item ${itemClass}">
                     <div class="reminder-info">
                         <div class="reminder-title">${note.title || '無標題'}</div>
                         <div class="reminder-subject">${note.callbackSubject || '無處理事項'}</div>
-                        <div class="reminder-time ${isOverdue ? 'overdue-text' : ''}">
+                        <div class="reminder-time ${isOverdue && !isPaused ? 'overdue-text' : ''}" style="color: ${isPaused ? '#999' : ''};">
                             <i class="fas fa-clock"></i> ${timeString}
                         </div>
-                        <div class="reminder-time-diff" style="font-size: 11px; color: ${isOverdue ? '#e17055' : '#74b9ff'}; margin-top: 2px;">
+                        <div class="reminder-time-diff" style="font-size: 11px; color: ${isPaused ? '#999' : (isOverdue ? '#e17055' : '#74b9ff')}; margin-top: 2px;">
                             ${timeDiffText}
                         </div>
                     </div>
                     <div class="reminder-actions">
-                        <button onclick="completeCallback('${note.id}')" class="btn-complete" title="標記完成">
+                        <button onclick="completeCallback('${note.id}')" class="btn-complete" title="標記完成" ${isPaused ? 'style="opacity: 0.5;"' : ''}>
                             <i class="fas fa-check"></i>
                         </button>
-                        <button onclick="snoozeCallback('${note.id}')" class="btn-snooze" title="延後10分鐘">
-                            <i class="fas fa-clock"></i>
-                        </button>
-                        <button onclick="snoozeCallback('${note.id}', 60)" class="btn-snooze" title="延後1小時" style="background: #a29bfe; margin-left: 2px;">
-                            <i class="fas fa-hourglass-half"></i>
-                        </button>
+                        ${isPaused ? 
+                            `<button onclick="resumeReminder('${note.id}')" class="btn-resume" title="恢復提醒" style="background: #00b894;">
+                                <i class="fas fa-play"></i>
+                            </button>` :
+                            `<button onclick="pauseReminder('${note.id}')" class="btn-pause" title="暫停提醒" style="background: #fdcb6e;">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button onclick="snoozeCallback('${note.id}')" class="btn-snooze" title="延後10分鐘">
+                                <i class="fas fa-clock"></i>
+                            </button>
+                            <button onclick="snoozeCallback('${note.id}', 60)" class="btn-snooze" title="延後1小時" style="background: #a29bfe; margin-left: 2px;">
+                                <i class="fas fa-hourglass-half"></i>
+                            </button>`
+                        }
                     </div>
                 </div>
             `;
@@ -2875,7 +2933,8 @@ function checkOverdueCallbacks() {
         note.callbackDateTime && 
         new Date(note.callbackDateTime) < now && 
         !note.callbackCompleted &&
-        note.reminderActive
+        note.reminderActive &&
+        !note.paused  // 跳過已暫停的提醒
     );
     
     if (overdueCallbacks.length > 0) {
@@ -2959,6 +3018,51 @@ function toggleReminders() {
     } else {
         reminderList.style.display = 'none';
         toggleBtn.className = 'fas fa-chevron-right';
+    }
+}
+
+// 暫停提醒
+function pauseReminder(noteId, duration = null) {
+    const note = notes.find(n => n.id === noteId);
+    if (note) {
+        note.paused = true;
+        note.pauseTime = new Date().toISOString();
+        note.pauseDuration = duration; // duration in minutes, null for indefinite
+        note.updatedAt = new Date().toISOString();
+        
+        saveNotes();
+        updateCallbackReminders();
+        
+        const durationText = duration ? `${duration}分鐘` : '手動恢復前';
+        showNotification(`提醒已暫停${durationText}`, 'info');
+        
+        // 如果有設定持續時間，設定自動恢復
+        if (duration) {
+            setTimeout(() => {
+                resumeReminder(noteId, true); // true 表示自動恢復
+            }, duration * 60 * 1000);
+        }
+        
+        console.log(`提醒 ${noteId} 已暫停${durationText}`);
+    }
+}
+
+// 恢復提醒
+function resumeReminder(noteId, isAutoResume = false) {
+    const note = notes.find(n => n.id === noteId);
+    if (note && note.paused) {
+        note.paused = false;
+        note.pauseTime = null;
+        note.pauseDuration = null;
+        note.updatedAt = new Date().toISOString();
+        
+        saveNotes();
+        updateCallbackReminders();
+        
+        const resumeType = isAutoResume ? '自動' : '手動';
+        showNotification(`提醒已${resumeType}恢復`, 'success');
+        
+        console.log(`提醒 ${noteId} 已${resumeType}恢復`);
     }
 }
 
@@ -3950,6 +4054,8 @@ document.addEventListener('DOMContentLoaded', function() {    // 基本初始化
     window.clearTodayArchive = clearTodayArchive;
     window.completeCallback = completeCallback;
     window.snoozeCallback = snoozeCallback;
+    window.pauseReminder = pauseReminder;
+    window.resumeReminder = resumeReminder;
     window.toggleReminders = toggleReminders;
     window.exportNotes = exportNotes;    window.quickZodiac = quickZodiac;
     window.quickPayment = quickPayment;
