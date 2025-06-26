@@ -773,6 +773,40 @@ body {
     color: #7f8c8d;
 }
 
+.pause-dropdown {
+    display: inline-block;
+    position: relative;
+}
+
+.pause-options-menu {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 1000;
+    min-width: 120px;
+    display: none;
+}
+
+.pause-options-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.pause-options-menu button:hover {
+    background-color: #f8f9fa;
+}
+
 .reminder-info {
     flex: 1;
     margin-right: 8px;
@@ -812,6 +846,7 @@ body {
 .btn-complete,
 .btn-snooze,
 .btn-pause,
+.btn-pause-options,
 .btn-resume {
     background: #00b894;
     color: white;
@@ -829,6 +864,15 @@ body {
 
 .btn-pause {
     background: #fdcb6e;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-pause-options {
+    background: #e17055;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
 }
 
 .btn-resume {
@@ -847,6 +891,11 @@ body {
 
 .btn-pause:hover {
     background: #e17055;
+    transform: scale(1.05);
+}
+
+.btn-pause-options:hover {
+    background: #d63031;
     transform: scale(1.05);
 }
 
@@ -2604,9 +2653,31 @@ function initNotificationPermission() {
 
 // 更新回電提醒
 function updateCallbackReminders() {
+    // 檢查並自動恢復過期的暫停提醒
+    checkExpiredPausedReminders();
+    
     displayActiveReminders();
     checkOverdueCallbacks();
     checkUpcomingCallbacks();
+}
+
+// 檢查並自動恢復過期的暫停提醒
+function checkExpiredPausedReminders() {
+    const now = new Date();
+    const expiredReminders = notes.filter(note => 
+        note.paused && 
+        note.pauseDuration && 
+        note.pauseTime
+    );
+    
+    expiredReminders.forEach(note => {
+        const pauseStart = new Date(note.pauseTime);
+        const pauseEnd = new Date(pauseStart.getTime() + note.pauseDuration * 60 * 1000);
+        
+        if (now >= pauseEnd) {
+            resumeReminder(note.id, true);
+        }
+    });
 }
 
 // 檢查即將到來的回電（5分鐘內）
@@ -2855,7 +2926,19 @@ function displayActiveReminders() {
             
             let timeDiffText = '';
             if (isPaused) {
-                timeDiffText = '⏸️ 已暫停';
+                if (note.pauseDuration && note.pauseTime) {
+                    const pauseStart = new Date(note.pauseTime);
+                    const pauseEnd = new Date(pauseStart.getTime() + note.pauseDuration * 60 * 1000);
+                    if (now < pauseEnd) {
+                        const remainingMs = pauseEnd - now;
+                        const remainingMinutes = Math.ceil(remainingMs / (1000 * 60));
+                        timeDiffText = `⏸️ 暫停中 (還有 ${remainingMinutes} 分鐘)`;
+                    } else {
+                        timeDiffText = '⏸️ 暫停中 (即將自動恢復)';
+                    }
+                } else {
+                    timeDiffText = '⏸️ 已暫停';
+                }
             } else if (isOverdue) {
                 if (hours > 0) {
                     timeDiffText = `已逾期 ${hours}小時${minutes}分鐘`;
@@ -2892,9 +2975,28 @@ function displayActiveReminders() {
                             `<button onclick="resumeReminder('${note.id}')" class="btn-resume" title="恢復提醒" style="background: #00b894;">
                                 <i class="fas fa-play"></i>
                             </button>` :
-                            `<button onclick="pauseReminder('${note.id}')" class="btn-pause" title="暫停提醒" style="background: #fdcb6e;">
-                                <i class="fas fa-pause"></i>
-                            </button>
+                            `<div class="pause-dropdown" style="position: relative; display: inline-block;">
+                                <button onclick="pauseReminder('${note.id}')" class="btn-pause" title="暫停提醒" style="background: #fdcb6e;">
+                                    <i class="fas fa-pause"></i>
+                                </button>
+                                <button onclick="togglePauseOptions('${note.id}')" class="btn-pause-options" title="暫停選項" style="background: #e17055; border-left: 1px solid #d63031; padding: 6px 4px;">
+                                    <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                                </button>
+                                <div id="pause-options-${note.id}" class="pause-options-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 1000; min-width: 120px;">
+                                    <button onclick="pauseReminder('${note.id}', 10)" style="display: block; width: 100%; padding: 8px 12px; border: none; background: none; text-align: left; cursor: pointer; font-size: 12px;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
+                                        暫停10分鐘
+                                    </button>
+                                    <button onclick="pauseReminder('${note.id}', 30)" style="display: block; width: 100%; padding: 8px 12px; border: none; background: none; text-align: left; cursor: pointer; font-size: 12px;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
+                                        暫停30分鐘
+                                    </button>
+                                    <button onclick="pauseReminder('${note.id}', 60)" style="display: block; width: 100%; padding: 8px 12px; border: none; background: none; text-align: left; cursor: pointer; font-size: 12px;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
+                                        暫停1小時
+                                    </button>
+                                    <button onclick="pauseReminder('${note.id}', 180)" style="display: block; width: 100%; padding: 8px 12px; border: none; background: none; text-align: left; cursor: pointer; font-size: 12px;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='none'">
+                                        暫停3小時
+                                    </button>
+                                </div>
+                            </div>
                             <button onclick="snoozeCallback('${note.id}')" class="btn-snooze" title="延後10分鐘">
                                 <i class="fas fa-clock"></i>
                             </button>
@@ -3043,6 +3145,12 @@ function pauseReminder(noteId, duration = null) {
             }, duration * 60 * 1000);
         }
         
+        // 隱藏下拉選單
+        const menu = document.getElementById(`pause-options-${noteId}`);
+        if (menu) {
+            menu.style.display = 'none';
+        }
+        
         console.log(`提醒 ${noteId} 已暫停${durationText}`);
     }
 }
@@ -3065,6 +3173,30 @@ function resumeReminder(noteId, isAutoResume = false) {
         console.log(`提醒 ${noteId} 已${resumeType}恢復`);
     }
 }
+
+// 切換暫停選項下拉選單
+function togglePauseOptions(noteId) {
+    // 先關閉所有其他下拉選單
+    document.querySelectorAll('.pause-options-menu').forEach(menu => {
+        if (menu.id !== `pause-options-${noteId}`) {
+            menu.style.display = 'none';
+        }
+    });
+    
+    const menu = document.getElementById(`pause-options-${noteId}`);
+    if (menu) {
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// 點擊其他地方關閉下拉選單
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.pause-dropdown')) {
+        document.querySelectorAll('.pause-options-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
 
 // ========== 智能提示功能 (從便利貼1補回) ==========
 
@@ -4056,6 +4188,7 @@ document.addEventListener('DOMContentLoaded', function() {    // 基本初始化
     window.snoozeCallback = snoozeCallback;
     window.pauseReminder = pauseReminder;
     window.resumeReminder = resumeReminder;
+    window.togglePauseOptions = togglePauseOptions;
     window.toggleReminders = toggleReminders;
     window.exportNotes = exportNotes;    window.quickZodiac = quickZodiac;
     window.quickPayment = quickPayment;
