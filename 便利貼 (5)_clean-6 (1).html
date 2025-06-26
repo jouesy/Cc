@@ -2151,6 +2151,22 @@ function loadNotes() {
     const saved = localStorage.getItem('stickyNotes');
     if (saved) {
         notes = JSON.parse(saved);
+        
+        // 遷移舊資料：為沒有新屬性的便利貼添加預設值
+        notes.forEach(note => {
+            if (note.paused === undefined) {
+                note.paused = false;
+            }
+            if (note.pauseTime === undefined) {
+                note.pauseTime = null;
+            }
+            if (note.pauseDuration === undefined) {
+                note.pauseDuration = null;
+            }
+        });
+        
+        // 儲存遷移後的資料
+        saveNotes();
     }
 }
 
@@ -2894,7 +2910,9 @@ function displayActiveReminders() {
             <div class="reminder-header">
                 <h3>
                     <i class="fas fa-phone ${overdueCount > 0 ? 'fa-bounce' : ''}"></i>
-                    回電提醒 (${statusText})
+                    回電提醒
+                    ${pausedCount > 0 ? '<i class="fas fa-pause" style="color: #999; margin-left: 5px;" title="有暫停的提醒"></i>' : ''}
+                    (${statusText})
                 </h3>
                 <button onclick="toggleReminders()" class="reminder-toggle">
                     <i class="fas fa-chevron-down"></i>
@@ -3125,8 +3143,18 @@ function toggleReminders() {
 
 // 暫停提醒
 function pauseReminder(noteId, duration = null) {
-    const note = notes.find(n => n.id === noteId);
-    if (note) {
+    try {
+        const note = notes.find(n => n.id === noteId);
+        if (!note) {
+            showNotification('找不到指定的便利貼', 'error');
+            return;
+        }
+        
+        if (note.paused) {
+            showNotification('提醒已經是暫停狀態', 'warning');
+            return;
+        }
+        
         note.paused = true;
         note.pauseTime = new Date().toISOString();
         note.pauseDuration = duration; // duration in minutes, null for indefinite
@@ -3152,13 +3180,28 @@ function pauseReminder(noteId, duration = null) {
         }
         
         console.log(`提醒 ${noteId} 已暫停${durationText}`);
+    } catch (error) {
+        console.error('暫停提醒時發生錯誤:', error);
+        showNotification('暫停提醒失敗', 'error');
     }
 }
 
 // 恢復提醒
 function resumeReminder(noteId, isAutoResume = false) {
-    const note = notes.find(n => n.id === noteId);
-    if (note && note.paused) {
+    try {
+        const note = notes.find(n => n.id === noteId);
+        if (!note) {
+            showNotification('找不到指定的便利貼', 'error');
+            return;
+        }
+        
+        if (!note.paused) {
+            if (!isAutoResume) {
+                showNotification('提醒並未暫停', 'warning');
+            }
+            return;
+        }
+        
         note.paused = false;
         note.pauseTime = null;
         note.pauseDuration = null;
@@ -3171,6 +3214,11 @@ function resumeReminder(noteId, isAutoResume = false) {
         showNotification(`提醒已${resumeType}恢復`, 'success');
         
         console.log(`提醒 ${noteId} 已${resumeType}恢復`);
+    } catch (error) {
+        console.error('恢復提醒時發生錯誤:', error);
+        if (!isAutoResume) {
+            showNotification('恢復提醒失敗', 'error');
+        }
     }
 }
 
